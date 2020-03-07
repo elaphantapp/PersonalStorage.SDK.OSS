@@ -1,0 +1,15 @@
+# Package Information for pkg-config
+
+prefix=@CMAKE_INSTALL_PREFIX@
+exec_prefix=${prefix}/bin
+libdir=${prefix}/lib
+includedir=${prefix}/include
+
+Name: Elastos.SDK.Contact
+Description: Elastos.SDK.Contact
+Version: @PACKAGE_VERSION@
+
+Requires: Elastos.SDK.Keypair.C libcurl
+Libs: -L${libdir} -lElastos.SDK.Contact -lelacarrier -lelafiletrans -lelasession -lcjson -lflatccrt -lpjmedia -lpjnath -lpjlib-util -lpj -lcrystal -lsrtp -ltoxcore -lsodium
+Libs.private: ${libdir}
+Cflags: -I${includedir}/Elastos.SDK.Contact
