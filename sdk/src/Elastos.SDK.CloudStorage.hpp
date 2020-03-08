@@ -8,35 +8,11 @@
  * @copyright	(c) 2012 xxx All rights reserved.
  **/
 
-#ifndef _ELASTOS_SDK_CLOUDSTORAGE_HPP_
-#define _ELASTOS_SDK_CLOUDSTORAGE_HPP_
+#ifndef _ELASTOS_SDK_CLOUD_STORAGE_API_HPP_
+#define _ELASTOS_SDK_CLOUD_STORAGE_API_HPP_
 
-#include <memory>
+#include <ErrCode.hpp>
+#include <CloudDisk.hpp>
+#include <CloudFile.hpp>
 
-namespace elastos {
-namespace sdk {
-
-class CloudStorage {
-public:
-    /*** type define ***/
-
-    /*** static function and variable ***/
-
-    /*** class function and variable ***/
-
-private:
-    /*** type define ***/
-
-    /*** static function and variable ***/
-
-    /*** class function and variable ***/
-    explicit CloudStorage();
-    virtual ~CloudStorage();
-
-
-}; // class CloudStorage
-
-} // namespace sdk
-} // namespace elastos
-
-#endif /* _ELASTOS_SDK_CLOUDSTORAGE_HPP_ */
+#endif /* _ELASTOS_SDK_CLOUD_STORAGE_API_HPP_ */

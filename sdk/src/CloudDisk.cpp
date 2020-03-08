@@ -1,12 +1,13 @@
 //
-//  Elastos.SDK.CloudStorage.cpp
+//  Elastos.SDK.CloudDisk.cpp
 //
 //  Created by mengxk on 20/03/06.
 //  Copyright © 2016 mengxk. All rights reserved.
 //
 
 
-#include <Elastos.SDK.CloudStorage.hpp>
+#include <CloudDisk.hpp>
+#include <AliCloudDiskImpl.hpp>
 
 namespace elastos {
 namespace sdk {
@@ -18,18 +19,22 @@ namespace sdk {
 /***********************************************/
 /***** static function implement ***************/
 /***********************************************/
+std::shared_ptr<CloudDisk> CloudDisk::Factory::Create(Domain domain)
+{
+    std::shared_ptr<CloudDisk> storage;
+    switch (domain) {
+    case Domain::AliOss:
+        storage = std::make_shared<AliCloudDiskImpl>();
+        break;
+    }
 
+    return storage;
+}
 
 /***********************************************/
 /***** class public function implement  ********/
 /***********************************************/
-CloudStorage::CloudStorage()
-{
-}
 
-CloudStorage::~CloudStorage()
-{
-}
 
 /***********************************************/
 /***** class protected function implement  *****/

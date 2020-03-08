@@ -6,6 +6,7 @@ include_directories("${CMAKE_INSTALL_PREFIX}/include")
 
 project(Elastos.SDK.CloudStorage)
 
+add_subdirectory(common)
 add_subdirectory(src)
 
 if(DEFINED CFG_WITH_TEST)
