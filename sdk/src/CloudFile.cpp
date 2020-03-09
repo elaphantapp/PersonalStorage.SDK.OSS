@@ -7,9 +7,12 @@
 
 
 #include <CloudFile.hpp>
+#include <CloudFileSystem.hpp>
 #include <CloudPartition.hpp>
 #include <ErrCode.hpp>
 #include <Log.hpp>
+#include <sstream>
+#include <fstream>
 
 namespace elastos {
 namespace sdk {
@@ -26,17 +29,30 @@ int CloudFile::open(std::shared_ptr<CloudPartition> partition,
                     CloudMode mode)
 {
     mPartition = partition;
-    mPath = path;
-    mMode = mode;
+    auto ret = mPartition->getFileSystem()->open(mPartition->getLabel(),
+                                                  path, mode, mFile);
+    CHECK_ERRCODE(ret);
 
     return 0;
 }
 
 int CloudFile::close()
 {
+    auto ret = mPartition->getFileSystem()->close(mFile);
+    CHECK_ERRCODE(ret);
+
     mPartition = nullptr;
-    mPath = "";
-    mMode = CloudMode::UserAll;
+    mFile = nullptr;
+    return 0;
+}
+
+int CloudFile::write(uint8_t buf[], int size)
+{
+    // auto istream = std::make_shared<std::iostream>();
+    std::shared_ptr<std::iostream> istream = std::make_shared<std::stringstream>();
+    istream->write(reinterpret_cast<char*>(buf), size);
+    auto ret = mPartition->getFileSystem()->write(mFile, istream);
+    CHECK_ERRCODE(ret);
 
     return 0;
 }

@@ -13,6 +13,13 @@
 
 #include <CloudFileSystem.hpp>
 
+namespace AlibabaCloud {
+namespace OSS {
+class OssError;
+class OssClient;
+} // namespace OSS
+} // namespace AlibabaCloud
+
 namespace elastos {
 namespace sdk {
 
@@ -31,12 +38,21 @@ public:
     // implement CloudFileSystem
     virtual int login(const std::string& site,
                       const std::string& user,
-                      const std::string& password) override;
+                      const std::string& password,
+                      const std::string& token) override;
 
-    virtual int mount(const std::string& name, CloudMode mode) override;
+    virtual int mount(const std::string& label, CloudMode mode) override;
 
+    virtual int open(const std::string& label,
+                     const std::string& filepath,
+                     CloudMode mode,
+                     std::shared_ptr<File>& file) override;
+    virtual int close(const std::shared_ptr<File> file) override;
 
-    // implement CloudFile
+    virtual int write(const std::shared_ptr<File> file,
+                      const std::shared_ptr<std::iostream> istream) override;
+
+    virtual int flush(const std::shared_ptr<File> file) override;
 
 private:
     /*** type define ***/
@@ -45,9 +61,9 @@ private:
     static std::atomic<int> sCounter;
 
     /*** class function and variable ***/
-    static int transAliOssErrCode(void* aliOssStatus);
+    static int transAliOssErrCode(bool isSuccess, AlibabaCloud::OSS::OssError& aliOssError);
 
-    std::shared_ptr<AliOssAuth> mAliOssAuth;
+    std::shared_ptr<AlibabaCloud::OSS::OssClient> mAliOssClient;
 }; // class CloudFileSystem
 
 } // namespace sdk

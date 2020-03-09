@@ -33,11 +33,12 @@ public:
     /*** static function and variable ***/
     constexpr static const int UnknownError = -1;
     constexpr static const int UnimplementedError = -2;
-    constexpr static const int NetworkIOException = -3;
-    constexpr static const int SignatureDoesNotMatch = -4;
-    constexpr static const int PermissionDenied = -5;
-    constexpr static const int FileExists = -6;
-    constexpr static const int ForbiddenBeforeLogin = -7;
+    constexpr static const int InvalidArgument = -3;
+    constexpr static const int NetworkIOException = -4;
+    constexpr static const int SignatureDoesNotMatch = -5;
+    constexpr static const int PermissionDenied = -6;
+    constexpr static const int FileExists = -7;
+    constexpr static const int ForbiddenBeforeLogin = -8;
     
     
     // constexpr static const int NotFoundError = -3;

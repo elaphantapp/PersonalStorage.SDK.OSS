@@ -32,6 +32,9 @@ public:
 
     virtual int mount(CloudMode mode = CloudMode::UserAll);
 
+    std::string getLabel();
+    std::shared_ptr<CloudFileSystem> getFileSystem();
+
 private:
     /*** type define ***/
 

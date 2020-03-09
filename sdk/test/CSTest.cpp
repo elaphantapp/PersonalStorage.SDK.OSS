@@ -24,11 +24,18 @@ int main( int argc, char **argv )
     CHECK_RETVAL(ret);
 
     auto file = std::make_shared<elastos::sdk::CloudFile>();
-    ret = file->open(partition, "test", elastos::sdk::CloudMode::OtherAll);
+    ret = file->open(partition, "test2", elastos::sdk::CloudMode::OtherAll);
     CHECK_RETVAL(ret);
 
-    // ret = file->mkdirs();
-    // CHECK_RETVAL(ret);
+    uint8_t buf[] = {0, 1, 2, 3, 0, 4, 5, 6};
+    ret = file->write(buf, sizeof(buf));
+    CHECK_RETVAL(ret);
+
+    ret = file->write(buf, sizeof(buf));
+    CHECK_RETVAL(ret);
+
+    ret = file->close();
+    CHECK_RETVAL(ret);
 
     std::cout << "================ ret=" << ret << std::endl;
 

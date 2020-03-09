@@ -1,8 +1,11 @@
-pkg_search_module(pkg-apr REQUIRED apr-1)
-pkg_search_module(pkg-aprutil REQUIRED apr-util-1)
-pkg_search_module(pkg-mxml REQUIRED mxml)
+pkg_search_module(pkg-openssl REQUIRED openssl)
+message(STATUS "openssl include path: ${pkg-openssl_INCLUDE_DIRS}")
+message(STATUS "openssl library path: ${pkg-openssl_STATIC_LDFLAGS}")
 pkg_search_module(pkg-curl REQUIRED libcurl)
-find_library(ALIOSS_LIBRARY NAMES oss_c_sdk PATHS ${CMAKE_INSTALL_PREFIX}/lib)
+message(STATUS "curl include path: ${pkg-curl_INCLUDE_DIRS}")
+message(STATUS "curl library path: ${pkg-curl_STATIC_LDFLAGS}")
+find_library(ALIOSS_LIBRARY NAMES alibabacloud-oss-cpp-sdk PATHS ${CMAKE_INSTALL_PREFIX}/lib)
+message(STATUS "alioss library path: ${ALIOSS_LIBRARY}")
 
 
 file( GLOB ${CMAKE_PROJECT_NAME}-SOURCES "*.cpp" )
@@ -25,12 +28,8 @@ target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE
     common
 )
 
-target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE "${pkg-apr_INCLUDE_DIRS}")
-target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE "${pkg-apr_STATIC_LDFLAGS}")
-target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE "${pkg-aprutil_INCLUDE_DIRS}")
-target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE "${pkg-aprutil_STATIC_LDFLAGS}")
-target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE "${pkg-mxml_INCLUDE_DIRS}")
-target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE "${pkg-mxml_STATIC_LDFLAGS}")
+target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE "${pkg-openssl_INCLUDE_DIRS}")
+target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE "${pkg-openssl_STATIC_LDFLAGS}")
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE "${pkg-curl_INCLUDE_DIRS}")
 target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE "${pkg-curl_STATIC_LDFLAGS}")
 target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE "${ALIOSS_LIBRARY}")

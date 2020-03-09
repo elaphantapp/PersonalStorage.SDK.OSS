@@ -32,7 +32,8 @@ public:
     /*** class function and variable ***/
     virtual int login(const std::string& site,
                       const std::string& user,
-                      const std::string& password);
+                      const std::string& password,
+                      const std::string& token = "");
 
     virtual int getPartition(const std::string& label,
                              std::shared_ptr<CloudPartition>& parition);

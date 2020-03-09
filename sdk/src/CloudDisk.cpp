@@ -43,9 +43,10 @@ std::shared_ptr<CloudDisk> CloudDisk::Find(Domain domain)
 /***********************************************/
 int CloudDisk::login(const std::string& site,
                      const std::string& user,
-                     const std::string& password)
+                     const std::string& password,
+                     const std::string& token)
 {
-    int ret = mCloudFileSystem->login(site, user, password);
+    int ret = mCloudFileSystem->login(site, user, password, token);
     CHECK_ERRCODE(ret);
 
     mLogined = true;

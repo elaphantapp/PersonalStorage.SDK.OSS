@@ -43,6 +43,15 @@ int CloudPartition::mount(CloudMode mode)
     return 0;
 }
 
+std::string CloudPartition::getLabel()
+{
+    return mLabel;
+}
+
+std::shared_ptr<CloudFileSystem> CloudPartition::getFileSystem()
+{
+    return mCloudFileSystem;
+}
 
 /***********************************************/
 /***** class protected function implement  *****/

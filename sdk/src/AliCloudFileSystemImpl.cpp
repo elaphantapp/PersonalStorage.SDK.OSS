@@ -9,50 +9,24 @@
 #include <ErrCode.hpp>
 #include <Log.hpp>
 
-#include <oss_api.h>
-#include <oss_auth.h>
-#include <oss_util.h>
+#include <alibabacloud/oss/OssClient.h>
+
+namespace AliOss = AlibabaCloud::OSS;
+
+#define CHECK_ALIOSS_ECODE(aliOssRet) {                                     \
+    int ret = transAliOssErrCode(aliOssRet.isSuccess(), aliOssRet.error()); \
+    CHECK_ERRCODE(ret);                                                     \
+}
 
 namespace elastos {
 namespace sdk {
 
-#define CHECK_AOSERR(code)               \
-    if(code != AOSE_OK) {                \
-        int ret = code;                  \
-        if(ret == AOSE_UNKNOWN_ERROR) {  \
-            ret -= 800;                  \
-        }                                \
-        CHECK_ERRCODE(ret);              \
-    }                                     
-
-struct AliOssAuth {
-    std::string mEndpoint;
-    std::string mAccessKeyId;
-    std::string mAccessKeySecret;
-};
-
-struct FileSystemOptions {
-    explicit FileSystemOptions(std::shared_ptr<AliOssAuth> access)
-        : aliOssAuth(access)
-        , aliOssOptions(nullptr)
-        , aliOssPool(nullptr) {
-        aos_pool_create(&aliOssPool, nullptr);
-        aliOssOptions = oss_request_options_create(aliOssPool);
-        aliOssOptions->config = oss_config_create(aliOssOptions->pool);
-        aos_str_set(&aliOssOptions->config->endpoint, aliOssAuth->mEndpoint.c_str());
-        aos_str_set(&aliOssOptions->config->access_key_id, aliOssAuth->mAccessKeyId.c_str());
-        aos_str_set(&aliOssOptions->config->access_key_secret, aliOssAuth->mAccessKeySecret.c_str());
-        aliOssOptions->config->is_cname = 0;
-        aliOssOptions->ctl = aos_http_controller_create(aliOssOptions->pool, 0);
-    };
-    virtual ~FileSystemOptions() {
-        aos_pool_destroy(aliOssPool);
-        aliOssPool = nullptr;
-        aliOssPool = nullptr;
-    };
-    std::shared_ptr<AliOssAuth> aliOssAuth;
-    oss_request_options_t* aliOssOptions;
-    aos_pool_t* aliOssPool;
+struct AliOssFile: public CloudFileSystem::File {
+    std::shared_ptr<std::iostream> mCache = std::make_shared<std::stringstream>();
+    int mCacheSize = 0;
+    std::string mToken;
+    int mPartNumber = 1;
+    AliOss::PartList mPartETagList;
 };
 
 /***********************************************/
@@ -69,7 +43,7 @@ std::atomic<int> AliCloudFileSystemImpl::sCounter;
 /***** class public function implement  ********/
 /***********************************************/
 AliCloudFileSystemImpl::AliCloudFileSystemImpl()
-    : mAliOssAuth()
+    : mAliOssClient()
 {
     Log::D(Log::TAG, __PRETTY_FUNCTION__);
 }
@@ -79,48 +53,133 @@ AliCloudFileSystemImpl::~AliCloudFileSystemImpl()
     Log::D(Log::TAG, __PRETTY_FUNCTION__);
 
     if(--sCounter == 0) {
-        aos_http_io_deinitialize();
-        Log::D(Log::TAG, "%s Deinitialized aos http io", __PRETTY_FUNCTION__);
+        AliOss::ShutdownSdk();
+        Log::D(Log::TAG, "%s Deinitialized aos sdk", __PRETTY_FUNCTION__);
     }
 }
 
 int AliCloudFileSystemImpl::login(const std::string& site,
                                   const std::string& user,
-                                  const std::string& password)
+                                  const std::string& password,
+                                  const std::string& token)
 {
     Log::D(Log::TAG, __PRETTY_FUNCTION__);
     if(sCounter <= 0) {
-        Log::D(Log::TAG, "%s Initialize aos http io", __PRETTY_FUNCTION__);
-        int ret = aos_http_io_initialize(nullptr, 0);
-        CHECK_AOSERR(ret);
-
+        Log::D(Log::TAG, "%s Initialize aos sdk", __PRETTY_FUNCTION__);
+        AliOss::InitializeSdk();
         sCounter = 1;
     }
 
-    mAliOssAuth = std::make_shared<AliOssAuth>();
-    mAliOssAuth->mEndpoint = site;
-    mAliOssAuth->mAccessKeyId = user;
-    mAliOssAuth->mAccessKeySecret = password;
+    AliOss::Credentials credentials(user, password, token);
+    AliOss::ClientConfiguration conf;
+    mAliOssClient = std::make_shared<AliOss::OssClient>(site, credentials, conf);
 
     return 0;
 }
 
-int AliCloudFileSystemImpl::mount(const std::string& name, CloudMode mode)
+int AliCloudFileSystemImpl::mount(const std::string& label, CloudMode mode)
 {
     Log::D(Log::TAG, __PRETTY_FUNCTION__);
-    FileSystemOptions options {mAliOssAuth};
 
-    aos_string_t bucket;
-    aos_str_set(&bucket, name.c_str());
-    oss_acl_e aliOssAcl = static_cast<oss_acl_e>(mode);
+    AliOss::CreateBucketRequest request{label,
+                                        AliOss::StorageClass::Standard,
+                                        static_cast<AliOss::CannedAccessControlList>(mode)};
+    auto aliOssRet = mAliOssClient->CreateBucket(request);
+    CHECK_ALIOSS_ECODE(aliOssRet);
 
-    aos_status_t* aliOssStatus = oss_create_bucket(options.aliOssOptions, &bucket, aliOssAcl, nullptr);
-    int ret = transAliOssErrCode(aliOssStatus);
+    return 0;
+}
+
+int AliCloudFileSystemImpl::open(const std::string& label,
+                                 const std::string& filepath,
+                                 CloudMode mode,
+                                 std::shared_ptr<File>& file)
+{
+    AliOss::InitiateMultipartUploadRequest request(label, filepath);
+    auto aliOssRet = mAliOssClient->InitiateMultipartUpload(request);
+    CHECK_ALIOSS_ECODE(aliOssRet);
+
+
+    auto filePtr = std::make_shared<AliOssFile>();
+    filePtr->mLabel = aliOssRet.result().Bucket();
+    filePtr->mPath = aliOssRet.result().Key();
+    filePtr->mToken = aliOssRet.result().UploadId();
+    file = filePtr;
+
+    return 0;
+}
+
+int AliCloudFileSystemImpl::close(const std::shared_ptr<File> file)
+{
+    auto filePtr = std::static_pointer_cast<AliOssFile>(file);
+    if(filePtr == nullptr) {
+        CHECK_ERRCODE(ErrCode::InvalidArgument);
+    }
+
+    flush(file);
+
+    AliOss::CompleteMultipartUploadRequest request {filePtr->mLabel, filePtr->mPath};
+    request.setUploadId(filePtr->mToken);
+    request.setPartList(filePtr->mPartETagList);
+    auto aliOssRet = mAliOssClient->CompleteMultipartUpload(request);
+    CHECK_ALIOSS_ECODE(aliOssRet);
+
+    return 0;
+}
+
+int AliCloudFileSystemImpl::write(const std::shared_ptr<File> file,
+                                  const std::shared_ptr<std::iostream> istream)
+{
+    auto filePtr = std::static_pointer_cast<AliOssFile>(file);
+    if(filePtr == nullptr) {
+        CHECK_ERRCODE(ErrCode::InvalidArgument);
+    }
+
+    istream->seekg(0, istream->end);
+    int size = istream->tellg();
+    istream->seekg(0, istream->beg);
+
+    (*filePtr->mCache) << istream;
+    filePtr->mCacheSize += size;
+    if(filePtr->mCacheSize < 819200) {
+        return 0;
+    }
+
+    int ret = flush(file);
     CHECK_ERRCODE(ret);
 
     return 0;
 }
 
+int AliCloudFileSystemImpl::flush(const std::shared_ptr<File> file)
+{
+    auto filePtr = std::static_pointer_cast<AliOssFile>(file);
+    if(filePtr == nullptr) {
+        CHECK_ERRCODE(ErrCode::InvalidArgument);
+    }
+
+    if(filePtr->mCacheSize <= 0) {
+        return 0;
+    }
+
+    AliOss::UploadPartRequest request {filePtr->mLabel, filePtr->mPath, filePtr->mCache};
+    request.setContentLength(filePtr->mCacheSize);
+    request.setUploadId(filePtr->mToken);
+    request.setPartNumber(filePtr->mPartNumber);
+    auto aliOssRet = mAliOssClient->UploadPart(request);
+    CHECK_ALIOSS_ECODE(aliOssRet);
+
+    Log::D(Log::TAG, "%s num=%d,tag=%s", __PRETTY_FUNCTION__,
+                     filePtr->mPartNumber, aliOssRet.result().ETag().c_str());
+    AliOss::Part part(filePtr->mPartNumber, aliOssRet.result().ETag());
+    filePtr->mPartETagList.push_back(part);
+    filePtr->mPartNumber++;
+
+    filePtr->mCache->clear();
+    filePtr->mCacheSize = 0;
+
+    return 0;
+}
 
 /***********************************************/
 /***** class protected function implement  *****/
@@ -130,27 +189,22 @@ int AliCloudFileSystemImpl::mount(const std::string& name, CloudMode mode)
 /***********************************************/
 /***** class private function implement  *******/
 /***********************************************/
-int AliCloudFileSystemImpl::transAliOssErrCode(void* aliOssStatus)
+int AliCloudFileSystemImpl::transAliOssErrCode(bool isSuccess, AlibabaCloud::OSS::OssError& aliOssError)
 {
-    aos_status_t* status = reinterpret_cast<aos_status_t*>(aliOssStatus);
-    if (aos_status_is_ok(status) == true) {
+    if (isSuccess == true) {
         return 0;
     }
 
-    Log::E(Log::TAG, "Found error status. code=%d, ecode=%s, emsg=%s, reqid=%s",
-                     status->code, status->error_code, status->error_msg, status->req_id);
-    if(status->code < 0) {
-        return status->code;
-    }
-
+    Log::E(Log::TAG, "Found oss error.  ecode=%s, emsg=%s, reqid=%s",
+                     aliOssError.Code().c_str(), aliOssError.Message().c_str(), aliOssError.RequestId().c_str());
     int ret = ErrCode::NetworkIOException;            
-    std::string errCode = status->error_code;
+    std::string errCode = aliOssError.Code();
     if (errCode == "SignatureDoesNotMatch") {
         ret = ErrCode::SignatureDoesNotMatch;
     } else if (errCode == "BucketAlreadyExists") {
         ret = ErrCode::FileExists;
-    } else if (status->code == 403) {
-        ret = ErrCode::PermissionDenied;
+    // } else if (status->code == 403) {
+    //     ret = ErrCode::PermissionDenied;
     }
 
     return ret;
