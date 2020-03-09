@@ -19,10 +19,10 @@ build_extfunc_depends()
     echo $CFG_TARGET_PLATFORM
     echo ===============
 
-	"$DEPENDS_DIR/scripts/build-apr.sh" $params
-	"$DEPENDS_DIR/scripts/build-aprutil.sh" $params
+	#"$DEPENDS_DIR/scripts/build-apr.sh" $params
+	#"$DEPENDS_DIR/scripts/build-aprutil.sh" $params
 
-	"$DEPENDS_DIR/scripts/build-minixml.sh" $params
+	#"$DEPENDS_DIR/scripts/build-minixml.sh" $params
 
 	"$DEPENDS_DIR/scripts/build-openssl.sh" $params;
 	"$DEPENDS_DIR/scripts/build-curl.sh" $params

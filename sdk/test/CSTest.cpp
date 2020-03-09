@@ -12,8 +12,8 @@ int main( int argc, char **argv )
 {
     auto disk = elastos::sdk::CloudDisk::Find(elastos::sdk::CloudDisk::Domain::AliOss);
     int ret = disk->login("oss-cn-beijing.aliyuncs.com",
-                          "LTAI4Fp5AVnjm6whAs9Whu4E", "3N6YyUPedbtAMyn5VtkwaMesFu2VaU"); 
-                              
+                          "LTAI4Fp5AVnjm6whAs9Whu4E",
+                          "3N6YyUPedbtAMyn5VtkwaMesFu2VaU"); 
     CHECK_RETVAL(ret);
 
     std::shared_ptr<elastos::sdk::CloudPartition> partition;
