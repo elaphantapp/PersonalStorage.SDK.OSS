@@ -1,6 +1,6 @@
 /**
- * @file	CloudDisk.hpp
- * @brief	CloudDisk
+ * @file	AliCloudFileSystemImpl.hpp
+ * @brief	AliCloudFileSystemImpl
  * @details	
  *
  * @author	xxx
@@ -8,33 +8,32 @@
  * @copyright	(c) 2012 xxx All rights reserved.
  **/
 
-#ifndef _ELASTOS_SDK_ALI_CLOUD_DISK_IMPL_HPP_
-#define _ELASTOS_SDK_ALI_CLOUD_DISK_IMPL_HPP_
+#ifndef _ELASTOS_SDK_ALI_CLOUD_FILESYSTEM_IMPL_HPP_
+#define _ELASTOS_SDK_ALI_CLOUD_FILESYSTEM_IMPL_HPP_
 
-#include <CloudDisk.hpp>
+#include <CloudFileSystem.hpp>
 
 namespace elastos {
 namespace sdk {
 
-class AliOssAccess;
+class AliOssAuth;
 
-class AliCloudDiskImpl : public CloudDisk {
+class AliCloudFileSystemImpl : public CloudFileSystem {
 public:
     /*** type define ***/
 
     /*** static function and variable ***/
 
     /*** class function and variable ***/
-    explicit AliCloudDiskImpl();
-    virtual ~AliCloudDiskImpl();
+    explicit AliCloudFileSystemImpl();
+    virtual ~AliCloudFileSystemImpl();
 
-    // implement CloudDisk
-    virtual int mount(const std::string& mountTo,
+    // implement CloudFileSystem
+    virtual int login(const std::string& site,
                       const std::string& user,
                       const std::string& password) override;
 
-protected:
-    virtual int mkdirs(const std::string& path, CloudFile::Mode mode) override;
+    virtual int mount(const std::string& name, CloudMode mode) override;
 
 
     // implement CloudFile
@@ -48,10 +47,10 @@ private:
     /*** class function and variable ***/
     static int transAliOssErrCode(void* aliOssStatus);
 
-    std::shared_ptr<AliOssAccess> mAliOssAccess;
-}; // class CloudDisk
+    std::shared_ptr<AliOssAuth> mAliOssAuth;
+}; // class CloudFileSystem
 
 } // namespace sdk
 } // namespace elastos
 
-#endif /* _ELASTOS_SDK_ALI_CLOUD_DISK_IMPL_HPP_ */
+#endif /* _ELASTOS_SDK_ALI_CLOUD_FILESYSTEM_IMPL_HPP_ */

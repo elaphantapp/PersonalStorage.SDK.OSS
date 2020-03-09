@@ -1,5 +1,5 @@
 //
-//  Elastos.SDK.CloudDisk.cpp
+//  Elastos.SDK.CloudPartition.cpp
 //
 //  Created by mengxk on 20/03/06.
 //  Copyright © 2016 mengxk. All rights reserved.
@@ -7,9 +7,9 @@
 
 
 #include <CloudFile.hpp>
-#include <CloudDisk.hpp>
-#include <Log.hpp>
+#include <CloudPartition.hpp>
 #include <ErrCode.hpp>
+#include <Log.hpp>
 
 namespace elastos {
 namespace sdk {
@@ -21,11 +21,11 @@ namespace sdk {
 /***********************************************/
 /***** static function implement ***************/
 /***********************************************/
-int CloudFile::open(std::shared_ptr<CloudDisk> disk,
+int CloudFile::open(std::shared_ptr<CloudPartition> partition,
                     const std::string& path,
-                    Mode mode)
+                    CloudMode mode)
 {
-    mDisk = disk;
+    mPartition = partition;
     mPath = path;
     mMode = mode;
 
@@ -34,17 +34,11 @@ int CloudFile::open(std::shared_ptr<CloudDisk> disk,
 
 int CloudFile::close()
 {
-    mDisk = nullptr;
+    mPartition = nullptr;
     mPath = "";
-    mMode = Mode::UserAll;
+    mMode = CloudMode::UserAll;
 
     return 0;
-}
-
-int CloudFile::mkdirs()
-{
-    int ret = mDisk->mkdirs(mPath, mMode);
-    return ret;
 }
 
 /***********************************************/

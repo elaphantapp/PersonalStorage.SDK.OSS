@@ -12,10 +12,12 @@
 #define _ELASTOS_SDK_CLOUD_DISK_HPP_
 
 #include <string>
-#include <CloudFile.hpp>
 
 namespace elastos {
 namespace sdk {
+
+class CloudFileSystem;
+class CloudPartition;
 
 class CloudDisk {
 public:
@@ -24,26 +26,16 @@ public:
         AliOss,
     }; // enum Domain
 
-    class Factory final {
-    public:
-        static std::shared_ptr<CloudDisk> Create(Domain domain);
-    private:
-        explicit Factory() = delete;
-        virtual ~Factory() = delete;
-    }; // class Factory
-
     /*** static function and variable ***/
+    static std::shared_ptr<CloudDisk> Find(Domain domain);
 
     /*** class function and variable ***/
-    virtual int mount(const std::string& mountTo,
+    virtual int login(const std::string& site,
                       const std::string& user,
-                      const std::string& password) = 0;
+                      const std::string& password);
 
-protected:
-    explicit CloudDisk() = default;
-    virtual ~CloudDisk() = default;
-
-    virtual int mkdirs(const std::string& path, CloudFile::Mode mode) = 0;
+    virtual int getPartition(const std::string& label,
+                             std::shared_ptr<CloudPartition>& parition);
 
 private:
     /*** type define ***/
@@ -51,8 +43,12 @@ private:
     /*** static function and variable ***/
 
     /*** class function and variable ***/
+    explicit CloudDisk() = default;
+    virtual ~CloudDisk() = default;
 
-    friend class CloudFile;
+    std::shared_ptr<CloudFileSystem> mCloudFileSystem = nullptr;
+    bool mLogined = false;
+
 }; // class CloudDisk
 
 } // namespace sdk

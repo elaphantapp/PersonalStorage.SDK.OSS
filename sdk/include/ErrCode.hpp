@@ -37,6 +37,7 @@ public:
     constexpr static const int SignatureDoesNotMatch = -4;
     constexpr static const int PermissionDenied = -5;
     constexpr static const int FileExists = -6;
+    constexpr static const int ForbiddenBeforeLogin = -7;
     
     
     // constexpr static const int NotFoundError = -3;

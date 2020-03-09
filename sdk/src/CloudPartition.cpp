@@ -1,15 +1,13 @@
 //
-//  Elastos.SDK.CloudDisk.cpp
+//  Elastos.SDK.CloudPartition.cpp
 //
 //  Created by mengxk on 20/03/06.
 //  Copyright © 2016 mengxk. All rights reserved.
 //
 
 
-#include <CloudDisk.hpp>
-
-#include <AliCloudFileSystemImpl.hpp>
 #include <CloudPartition.hpp>
+#include <CloudFileSystem.hpp>
 #include <ErrCode.hpp>
 #include <Log.hpp>
 
@@ -23,43 +21,25 @@ namespace sdk {
 /***********************************************/
 /***** static function implement ***************/
 /***********************************************/
-std::shared_ptr<CloudDisk> CloudDisk::Find(Domain domain)
-{
-    struct Impl : CloudDisk {
-    };
-    auto disk = std::make_shared<Impl>();
-
-    switch (domain) {
-    case Domain::AliOss:
-        disk->mCloudFileSystem = std::make_shared<AliCloudFileSystemImpl>();
-        break;
-    }
-
-    return disk;
-}
 
 /***********************************************/
 /***** class public function implement  ********/
 /***********************************************/
-int CloudDisk::login(const std::string& site,
-                     const std::string& user,
-                     const std::string& password)
+CloudPartition::CloudPartition(const std::string& label,
+                               std::shared_ptr<CloudFileSystem> cloudFileSystem)
+    : mLabel(label)
+    , mCloudFileSystem(cloudFileSystem) 
 {
-    int ret = mCloudFileSystem->login(site, user, password);
-    CHECK_ERRCODE(ret);
-
-    mLogined = true;
-    return 0;
+}
+CloudPartition::~CloudPartition()
+{
 }
 
-int CloudDisk::getPartition(const std::string& label,
-                            std::shared_ptr<CloudPartition>& parition)
+int CloudPartition::mount(CloudMode mode)
 {
-    if(mLogined == false) {
-        CHECK_ERRCODE(ErrCode::ForbiddenBeforeLogin);
-    }
+    int ret = mCloudFileSystem->mount(mLabel, mode);
+    CHECK_ERRCODE(ret);
 
-    parition = std::make_shared<CloudPartition>(label, mCloudFileSystem);
     return 0;
 }
 
@@ -67,6 +47,7 @@ int CloudDisk::getPartition(const std::string& label,
 /***********************************************/
 /***** class protected function implement  *****/
 /***********************************************/
+
 
 /***********************************************/
 /***** class private function implement  *******/

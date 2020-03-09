@@ -13,20 +13,16 @@
 
 #include <memory>
 #include <string>
+#include <CloudMode.hpp>
 
 namespace elastos {
 namespace sdk {
 
-class CloudDisk;
+class CloudPartition;
 
 class CloudFile {
 public:
     /*** type define ***/
-    enum class Mode : int {
-        UserAll = 0,
-        OtherReady = 1,
-        OtherAll = 2,
-    }; // enum Mode
 
     /*** static function and variable ***/
 
@@ -34,12 +30,10 @@ public:
     explicit CloudFile() = default;
     virtual ~CloudFile() = default;
 
-    virtual int open(std::shared_ptr<CloudDisk> disk,
+    virtual int open(std::shared_ptr<CloudPartition> partition,
                      const std::string& path,
-                     Mode mode = Mode::UserAll);
+                     CloudMode mode = CloudMode::UserAll);
     virtual int close();
-
-    virtual int mkdirs();
 
 private:
     /*** type define ***/
@@ -47,9 +41,9 @@ private:
     /*** static function and variable ***/
 
     /*** class function and variable ***/
-    std::shared_ptr<CloudDisk> mDisk;
+    std::shared_ptr<CloudPartition> mPartition;
     std::string mPath;
-    Mode mMode;
+    CloudMode mMode;
 }; // class CloudFileInterface
 
 } // namespace sdk

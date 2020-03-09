@@ -11,8 +11,9 @@
 #ifndef _ELASTOS_SDK_CLOUD_STORAGE_API_HPP_
 #define _ELASTOS_SDK_CLOUD_STORAGE_API_HPP_
 
-#include <ErrCode.hpp>
 #include <CloudDisk.hpp>
 #include <CloudFile.hpp>
+#include <CloudPartition.hpp>
+#include <ErrCode.hpp>
 
 #endif /* _ELASTOS_SDK_CLOUD_STORAGE_API_HPP_ */
