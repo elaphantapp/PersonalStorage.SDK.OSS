@@ -22,11 +22,24 @@ namespace elastos {
 namespace sdk {
 
 struct AliOssFile: public CloudFileSystem::File {
-    std::shared_ptr<std::iostream> mCache = std::make_shared<std::stringstream>();
-    int mCacheSize = 0;
-    std::string mToken;
-    int mPartNumber = 1;
-    AliOss::PartList mPartETagList;
+    std::shared_ptr<std::iostream> mPartUploadCache;
+    int mPartUploadCacheSize = 0;
+    std::string mPartUploadToken;
+    int mPartUploadNumber = 0;
+    AliOss::PartList mPartUploadETagList;
+
+
+    void clear() override {
+        CloudFileSystem::File::clear();
+
+        mPartUploadCache = nullptr;
+        mPartUploadCacheSize = 0;
+        mPartUploadToken.clear();
+        mPartUploadNumber = 0;
+        mPartUploadETagList.clear();
+    }
+
+    static constexpr const int UploadPartMinSize = 100 * 1024;
 };
 
 /***********************************************/
@@ -95,16 +108,10 @@ int AliCloudFileSystemImpl::open(const std::string& label,
                                  CloudMode mode,
                                  std::shared_ptr<File>& file)
 {
-    AliOss::InitiateMultipartUploadRequest request(label, filepath);
-    auto aliOssRet = mAliOssClient->InitiateMultipartUpload(request);
-    CHECK_ALIOSS_ECODE(aliOssRet);
+    file = std::make_shared<AliOssFile>();
+    file->mLabel = label;
+    file->mPath = filepath;
 
-
-    auto filePtr = std::make_shared<AliOssFile>();
-    filePtr->mLabel = aliOssRet.result().Bucket();
-    filePtr->mPath = aliOssRet.result().Key();
-    filePtr->mToken = aliOssRet.result().UploadId();
-    file = filePtr;
 
     return 0;
 }
@@ -116,69 +123,112 @@ int AliCloudFileSystemImpl::close(const std::shared_ptr<File> file)
         CHECK_ERRCODE(ErrCode::InvalidArgument);
     }
 
-    flush(file);
-
-    AliOss::CompleteMultipartUploadRequest request {filePtr->mLabel, filePtr->mPath};
-    request.setUploadId(filePtr->mToken);
-    request.setPartList(filePtr->mPartETagList);
-    auto aliOssRet = mAliOssClient->CompleteMultipartUpload(request);
-    CHECK_ALIOSS_ECODE(aliOssRet);
-
-    return 0;
-}
-
-int AliCloudFileSystemImpl::write(const std::shared_ptr<File> file,
-                                  const std::shared_ptr<std::iostream> istream)
-{
-    auto filePtr = std::static_pointer_cast<AliOssFile>(file);
-    if(filePtr == nullptr) {
-        CHECK_ERRCODE(ErrCode::InvalidArgument);
-    }
-
-    istream->seekg(0, istream->end);
-    int size = istream->tellg();
-    istream->seekg(0, istream->beg);
-
-    (*filePtr->mCache) << istream;
-    filePtr->mCacheSize += size;
-    if(filePtr->mCacheSize < 819200) {
-        return 0;
-    }
-
-    int ret = flush(file);
+    int ret = partUpload(file, true);
     CHECK_ERRCODE(ret);
 
     return 0;
 }
 
-int AliCloudFileSystemImpl::flush(const std::shared_ptr<File> file)
+int AliCloudFileSystemImpl::write(const std::shared_ptr<File> file,
+                                  const uint8_t buf[], int size)
 {
     auto filePtr = std::static_pointer_cast<AliOssFile>(file);
     if(filePtr == nullptr) {
         CHECK_ERRCODE(ErrCode::InvalidArgument);
     }
 
-    if(filePtr->mCacheSize <= 0) {
-        return 0;
+    if(filePtr->mPartUploadCache == nullptr) {
+        filePtr->mPartUploadCache = std::make_shared<std::stringstream>();
+        filePtr->mPartUploadCacheSize = 0;
+    }
+    filePtr->mPartUploadCache->write(reinterpret_cast<const char*>(buf), size);
+    filePtr->mPartUploadCacheSize += size;
+    filePtr->mWritePostion += size;
+    if(filePtr->mPartUploadCacheSize < AliOssFile::UploadPartMinSize) {
+        return size;
     }
 
-    AliOss::UploadPartRequest request {filePtr->mLabel, filePtr->mPath, filePtr->mCache};
-    request.setContentLength(filePtr->mCacheSize);
-    request.setUploadId(filePtr->mToken);
-    request.setPartNumber(filePtr->mPartNumber);
-    auto aliOssRet = mAliOssClient->UploadPart(request);
+    int ret = partUpload(file, false);
+    CHECK_ERRCODE(ret);
+
+    return size;
+}
+
+int AliCloudFileSystemImpl::read(const std::shared_ptr<File> file,
+                                 uint8_t buf[], int size)
+{
+    auto filePtr = std::static_pointer_cast<AliOssFile>(file);
+    if(filePtr == nullptr) {
+        CHECK_ERRCODE(ErrCode::InvalidArgument);
+    }
+
+    if(filePtr->mSize <= 0) {
+        auto aliOssRet = mAliOssClient->HeadObject(filePtr->mLabel, filePtr->mPath);
+        CHECK_ALIOSS_ECODE(aliOssRet);
+        filePtr->mSize = aliOssRet.result().ContentLength();
+    }
+
+    if(filePtr->mReadPostion >= filePtr->mSize) {
+        return 0;
+    }
+    if(filePtr->mReadPostion + size >= filePtr->mSize) {
+        size = filePtr->mSize - filePtr->mReadPostion;
+    }
+
+    AliOss::GetObjectRequest request {filePtr->mLabel, filePtr->mPath};
+    request.setRange(filePtr->mReadPostion , filePtr->mReadPostion + size - 1);
+    auto aliOssRet = mAliOssClient->GetObject(request);
     CHECK_ALIOSS_ECODE(aliOssRet);
 
-    Log::D(Log::TAG, "%s num=%d,tag=%s", __PRETTY_FUNCTION__,
-                     filePtr->mPartNumber, aliOssRet.result().ETag().c_str());
-    AliOss::Part part(filePtr->mPartNumber, aliOssRet.result().ETag());
-    filePtr->mPartETagList.push_back(part);
-    filePtr->mPartNumber++;
+    int recvSize = static_cast<int>(aliOssRet.result().Metadata().ContentLength());
+    // Log::W(Log::TAG, "%s range=(%d~%d), return=%d", __PRETTY_FUNCTION__, filePtr->mReadPostion , filePtr->mReadPostion + size - 1, recvSize);
+    aliOssRet.result().Content()->read(reinterpret_cast<char*>(buf), recvSize);
 
-    filePtr->mCache->clear();
-    filePtr->mCacheSize = 0;
+    filePtr->mReadPostion += recvSize;
 
-    return 0;
+    return recvSize;
+}
+
+int AliCloudFileSystemImpl::write(const std::shared_ptr<File> file,
+                                  const std::shared_ptr<std::iostream> stream)
+{
+    auto filePtr = std::static_pointer_cast<AliOssFile>(file);
+    if(filePtr == nullptr) {
+        CHECK_ERRCODE(ErrCode::InvalidArgument);
+    }
+
+    stream->seekg(0, stream->end);
+    int size = stream->tellg();
+    stream->seekg(0, stream->beg);
+
+    AliOss::PutObjectRequest request {filePtr->mLabel, filePtr->mPath, stream};
+    auto aliOssRet = mAliOssClient->PutObject(request);
+    CHECK_ALIOSS_ECODE(aliOssRet);
+    
+    return size;
+}
+
+int AliCloudFileSystemImpl::read(const std::shared_ptr<File> file,
+                                 std::shared_ptr<std::iostream> stream)
+{
+    auto filePtr = std::static_pointer_cast<AliOssFile>(file);
+    if(filePtr == nullptr) {
+        CHECK_ERRCODE(ErrCode::InvalidArgument);
+    }
+
+    stream->clear();
+
+    AliOss::GetObjectRequest request {filePtr->mLabel, filePtr->mPath};
+    request.setRange(filePtr->mReadPostion, -1);
+    request.setResponseStreamFactory([=]() {return stream;});
+    auto aliOssRet = mAliOssClient->GetObject(request);
+    CHECK_ALIOSS_ECODE(aliOssRet);
+
+    int size = static_cast<int>(aliOssRet.result().Metadata().ContentLength());
+
+    // filePtr->mReadPostion += size;
+
+    return size;
 }
 
 /***********************************************/
@@ -189,23 +239,116 @@ int AliCloudFileSystemImpl::flush(const std::shared_ptr<File> file)
 /***********************************************/
 /***** class private function implement  *******/
 /***********************************************/
+int AliCloudFileSystemImpl::partUpload(const std::shared_ptr<File> file, bool lastTime)
+{
+    auto filePtr = std::static_pointer_cast<AliOssFile>(file);
+    if(filePtr == nullptr) {
+        CHECK_ERRCODE(ErrCode::InvalidArgument);
+    }
+
+    if(filePtr->mPartUploadCache == nullptr
+    || filePtr->mPartUploadCacheSize <= 0) {
+        return 0;
+    }
+
+    if(filePtr->mPartUploadToken.empty() == true) {
+        AliOss::InitiateMultipartUploadRequest request(filePtr->mLabel, filePtr->mPath);
+        auto aliOssRet = mAliOssClient->InitiateMultipartUpload(request);
+        CHECK_ALIOSS_ECODE(aliOssRet);
+        filePtr->mPartUploadToken = aliOssRet.result().UploadId();
+    }
+
+    AliOss::UploadPartRequest request {filePtr->mLabel, filePtr->mPath, filePtr->mPartUploadCache};
+    request.setContentLength(filePtr->mPartUploadCacheSize);
+    request.setUploadId(filePtr->mPartUploadToken);
+    request.setPartNumber(filePtr->mPartUploadNumber + 1);
+    auto aliOssRet = mAliOssClient->UploadPart(request);
+    CHECK_ALIOSS_ECODE(aliOssRet);
+
+    filePtr->mPartUploadNumber++;
+    AliOss::Part part(filePtr->mPartUploadNumber, aliOssRet.result().ETag());
+    filePtr->mPartUploadETagList.push_back(part);
+
+    filePtr->mPartUploadCache = nullptr;
+    filePtr->mPartUploadCacheSize = 0;
+
+    // Log::D(Log::TAG, "%s num=%d,tag=%s", __PRETTY_FUNCTION__,
+    //                  filePtr->mPartUploadNumber, aliOssRet.result().ETag().c_str());
+
+    if(lastTime == false) {
+        return 0;
+    }
+
+    if(filePtr->mPartUploadNumber > 0) {
+        AliOss::CompleteMultipartUploadRequest request {filePtr->mLabel, filePtr->mPath};
+        request.setUploadId(filePtr->mPartUploadToken);
+        request.setPartList(filePtr->mPartUploadETagList);
+        auto aliOssRet = mAliOssClient->CompleteMultipartUpload(request);
+        CHECK_ALIOSS_ECODE(aliOssRet);
+    }
+
+    return 0;
+}
+
 int AliCloudFileSystemImpl::transAliOssErrCode(bool isSuccess, AlibabaCloud::OSS::OssError& aliOssError)
 {
     if (isSuccess == true) {
         return 0;
     }
 
-    Log::E(Log::TAG, "Found oss error.  ecode=%s, emsg=%s, reqid=%s",
-                     aliOssError.Code().c_str(), aliOssError.Message().c_str(), aliOssError.RequestId().c_str());
-    int ret = ErrCode::NetworkIOException;            
-    std::string errCode = aliOssError.Code();
-    if (errCode == "SignatureDoesNotMatch") {
-        ret = ErrCode::SignatureDoesNotMatch;
-    } else if (errCode == "BucketAlreadyExists") {
-        ret = ErrCode::FileExists;
-    // } else if (status->code == 403) {
-    //     ret = ErrCode::PermissionDenied;
+    const std::map<std::string, int> errCodeMap {
+        {"AccessDenied", ErrCode::AliOssAccessDenied},
+        {"BucketAlreadyExists", ErrCode::AliOssBucketAlreadyExists},
+        {"BucketNotEmpty", ErrCode::AliOssBucketNotEmpty},
+        {"EntityTooLarge", ErrCode::AliOssEntityTooLarge},
+        {"EntityTooSmall", ErrCode::AliOssEntityTooSmall},
+        {"FileGroupTooLarge", ErrCode::AliOssFileGroupTooLarge},
+        {"InvalidLinkName", ErrCode::AliOssInvalidLinkName},
+        {"LinkPartNotExist", ErrCode::AliOssLinkPartNotExist},
+        {"ObjectLinkTooLarge", ErrCode::AliOssObjectLinkTooLarge},
+        {"FieldItemTooLong", ErrCode::AliOssFieldItemTooLong},
+        {"FilePartInterity", ErrCode::AliOssFilePartInterity},
+        {"FilePartNotExist", ErrCode::AliOssFilePartNotExist},
+        {"FilePartStale", ErrCode::AliOssFilePartStale},
+        {"IncorrectNumberOfFilesInPOSTRequest", ErrCode::AliOssIncorrectNumberOfFilesInPOSTRequest},
+        {"InvalidArgument", ErrCode::AliOssInvalidArgument},
+        {"InvalidAccessKeyId", ErrCode::AliOssInvalidAccessKeyId},
+        {"InvalidBucketName", ErrCode::AliOssInvalidBucketName},
+        {"InvalidDigest", ErrCode::AliOssInvalidDigest},
+        {"InvalidEncryptionAlgorithmError", ErrCode::AliOssInvalidEncryptionAlgorithmError},
+        {"InvalidObjectName", ErrCode::AliOssInvalidObjectName},
+        {"InvalidPart", ErrCode::AliOssInvalidPart},
+        {"InvalidPartOrder", ErrCode::AliOssInvalidPartOrder},
+        {"InvalidPolicyDocument", ErrCode::AliOssInvalidPolicyDocument},
+        {"InvalidTargetBucketForLogging", ErrCode::AliOssInvalidTargetBucketForLogging},
+        {"InternalError", ErrCode::AliOssInternalError},
+        {"MalformedXML", ErrCode::AliOssMalformedXML},
+        {"MalformedPOSTRequest", ErrCode::AliOssMalformedPOSTRequest},
+        {"MaxPOSTPreDataLengthExceededError", ErrCode::AliOssMaxPOSTPreDataLengthExceededError},
+        {"MethodNotAllowed", ErrCode::AliOssMethodNotAllowed},
+        {"MissingArgument", ErrCode::AliOssMissingArgument},
+        {"MissingContentLength", ErrCode::AliOssMissingContentLength},
+        {"NoSuchBucket", ErrCode::AliOssNoSuchBucket},
+        {"NoSuchKey", ErrCode::AliOssNoSuchKey},
+        {"NoSuchUpload", ErrCode::AliOssNoSuchUpload},
+        {"NotImplemented", ErrCode::AliOssNotImplemented},
+        {"PreconditionFailed", ErrCode::AliOssPreconditionFailed},
+        {"RequestTimeTooSkewed", ErrCode::AliOssRequestTimeTooSkewed},
+        {"RequestTimeout", ErrCode::AliOssRequestTimeout},
+        {"RequestIsNotMultiPartContent", ErrCode::AliOssRequestIsNotMultiPartContent},
+        {"SignatureDoesNotMatch", ErrCode::AliOssSignatureDoesNotMatch},
+        {"TooManyBuckets", ErrCode::AliOssTooManyBuckets},
+        {"ValidateError", ErrCode::AliOssValidateError},
+        {"ClientError:200023", ErrCode::AliOssClientError200023},
+    };
+
+    int ret = ErrCode::AliOssUnknownError;
+    auto item = errCodeMap.find(aliOssError.Code());
+    if(item != errCodeMap.end()) {
+        ret = item->second;
     }
+    Log::E(Log::TAG, "Found oss error. ret=%d ecode=%s, emsg=%s, reqid=%s",
+                     ret, aliOssError.Code().c_str(), aliOssError.Message().c_str(), aliOssError.RequestId().c_str());
 
     return ret;
 }

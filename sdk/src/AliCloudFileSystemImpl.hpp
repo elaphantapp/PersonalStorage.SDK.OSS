@@ -50,9 +50,14 @@ public:
     virtual int close(const std::shared_ptr<File> file) override;
 
     virtual int write(const std::shared_ptr<File> file,
-                      const std::shared_ptr<std::iostream> istream) override;
+                      const uint8_t buf[], int size) override;
+    virtual int read(const std::shared_ptr<File> file,
+                     uint8_t buf[], int size) override;
 
-    virtual int flush(const std::shared_ptr<File> file) override;
+    virtual int write(const std::shared_ptr<File> file,
+                      const std::shared_ptr<std::iostream> stream) override;
+    virtual int read(const std::shared_ptr<File> file,
+                     std::shared_ptr<std::iostream> stream) override;
 
 private:
     /*** type define ***/
@@ -61,7 +66,8 @@ private:
     static std::atomic<int> sCounter;
 
     /*** class function and variable ***/
-    static int transAliOssErrCode(bool isSuccess, AlibabaCloud::OSS::OssError& aliOssError);
+    int partUpload(const std::shared_ptr<File> file, bool lastTime);
+    int transAliOssErrCode(bool isSuccess, AlibabaCloud::OSS::OssError& aliOssError);
 
     std::shared_ptr<AlibabaCloud::OSS::OssClient> mAliOssClient;
 }; // class CloudFileSystem

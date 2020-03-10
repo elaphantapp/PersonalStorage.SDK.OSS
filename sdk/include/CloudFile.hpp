@@ -36,10 +36,13 @@ public:
                      const std::string& path,
                      CloudMode mode = CloudMode::UserAll);
     virtual int close();
+    virtual int flush();
 
-    virtual int write(uint8_t buf[], int size);
+    virtual int write(const uint8_t from[], int size);
+    virtual int read(uint8_t to[], int size);
 
-    // virtual int write(std::ifstream& file);
+    virtual int write(const std::shared_ptr<std::iostream> from);
+    virtual int read(std::shared_ptr<std::iostream> to);
 
 private:
     /*** type define ***/

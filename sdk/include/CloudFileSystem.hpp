@@ -23,6 +23,15 @@ public:
     struct File {
         std::string mLabel;
         std::string mPath;
+        int mReadPostion = 0;
+        int mWritePostion = 0;
+        int64_t mSize = 0;
+
+        virtual void clear() {
+            mReadPostion = 0;
+            mWritePostion = 0;
+            mSize = 0;
+        }
     };
 
     /*** static function and variable ***/
@@ -42,12 +51,14 @@ public:
     virtual int close(const std::shared_ptr<File> file) = 0;
 
     virtual int write(const std::shared_ptr<File> file,
-                      const std::shared_ptr<std::iostream> istream) = 0;
-    // virtual int read(const std::string& volume,
-    //                  const std::string& filepath,
-    //                  std::shared_ptr<std::iostream>& ostream) = 0;
+                      const uint8_t buf[], int size) = 0;
+    virtual int read(const std::shared_ptr<File> file,
+                     uint8_t buf[], int size) = 0;
 
-    virtual int flush(const std::shared_ptr<File> file) = 0;
+    virtual int write(const std::shared_ptr<File> file,
+                      const std::shared_ptr<std::iostream> stream) = 0;
+    virtual int read(const std::shared_ptr<File> file,
+                     std::shared_ptr<std::iostream> stream) = 0;
 
 protected:
     explicit CloudFileSystem() = default;

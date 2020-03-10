@@ -46,15 +46,46 @@ int CloudFile::close()
     return 0;
 }
 
-int CloudFile::write(uint8_t buf[], int size)
+int CloudFile::flush()
 {
-    // auto istream = std::make_shared<std::iostream>();
-    std::shared_ptr<std::iostream> istream = std::make_shared<std::stringstream>();
-    istream->write(reinterpret_cast<char*>(buf), size);
-    auto ret = mPartition->getFileSystem()->write(mFile, istream);
+    auto ret = mPartition->getFileSystem()->close(mFile);
     CHECK_ERRCODE(ret);
 
+    mFile->clear();
+
     return 0;
+}
+
+int CloudFile::write(const uint8_t from[], int size)
+{
+    auto ret = mPartition->getFileSystem()->write(mFile, from, size);
+    CHECK_ERRCODE(ret);
+
+    return ret;
+}
+
+int CloudFile::read(uint8_t to[], int size)
+{
+    auto ret = mPartition->getFileSystem()->read(mFile, to, size);
+    CHECK_ERRCODE(ret);
+
+    return ret;
+}
+
+int CloudFile::write(const std::shared_ptr<std::iostream> from)
+{
+    auto ret = mPartition->getFileSystem()->write(mFile, from);
+    CHECK_ERRCODE(ret);
+
+    return ret;
+}
+
+int CloudFile::read(std::shared_ptr<std::iostream> to)
+{
+    auto ret = mPartition->getFileSystem()->read(mFile, to);
+    CHECK_ERRCODE(ret);
+
+    return ret;
 }
 
 /***********************************************/
