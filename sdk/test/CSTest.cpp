@@ -1,6 +1,6 @@
 #include <iostream>
 #include <vector>
-#include <Elastos.SDK.CloudStorage.hpp>
+#include <PersonalStorage.SDK.OSS.hpp>
 
 #define CHECK_RETVAL(ret)                                           \
     if(ret < 0) {                                                   \
@@ -67,11 +67,11 @@ int testBuffer(std::shared_ptr<elastos::sdk::CloudPartition> partition)
         std::cout << "write buff idx=" << idx << std::endl;
     }
 
-    ret = file->close();
-    CHECK_RETVAL(ret);
+    // ret = file->close();
+    // CHECK_RETVAL(ret);
 
-    ret = file->open(partition, cloudFilePath, elastos::sdk::CloudMode::UserAll);
-    CHECK_RETVAL(ret);
+    // ret = file->open(partition, cloudFilePath, elastos::sdk::CloudMode::UserAll);
+    // CHECK_RETVAL(ret);
     auto outputFile = std::make_shared<std::fstream>(outputBufferName, std::ios::out);
     for(auto idx = 0; idx < 80; idx++) {
         uint8_t buf[1020];

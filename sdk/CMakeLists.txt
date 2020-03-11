@@ -4,7 +4,7 @@ include(../config/cmake/CMakeLists.txt)
 
 include_directories("${CMAKE_INSTALL_PREFIX}/include")
 
-project(Elastos.SDK.CloudStorage)
+project(PersonalStorage.SDK.OSS)
 
 add_subdirectory(common)
 add_subdirectory(src)

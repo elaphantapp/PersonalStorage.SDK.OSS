@@ -30,7 +30,7 @@ build_extfunc_depends()
 	"$DEPENDS_DIR/scripts/build-alioss.sh" $params;
 }
 
-export CFG_PROJECT_NAME="Elastos.SDK.CloudStorage";
+export CFG_PROJECT_NAME="PersonalStorage.SDK.OSS";
 export CFG_PROJECT_DIR="$PROJECT_DIR";
 export CFG_CMAKELIST_DIR="$PROJECT_DIR/sdk";
 source "$DEPENDS_DIR/scripts/build.sh" $@ --force-build;

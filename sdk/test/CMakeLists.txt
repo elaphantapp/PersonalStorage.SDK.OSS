@@ -12,4 +12,4 @@ target_include_directories(CloudStorageTest PRIVATE
     "${CMAKE_INSTALL_PREFIX}/include")
 target_link_libraries(CloudStorageTest PUBLIC
     ${pkg-openssl_STATIC_LDFLAGS}
-    Elastos.SDK.CloudStorage)
+    PersonalStorage.SDK.OSS)
