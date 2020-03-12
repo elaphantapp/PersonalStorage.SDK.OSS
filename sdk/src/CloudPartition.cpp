@@ -8,7 +8,7 @@
 
 #include <CloudPartition.hpp>
 #include <CloudFileSystem.hpp>
-#include <ErrCode.hpp>
+#include <CloudErrCode.hpp>
 #include <Log.hpp>
 
 namespace elastos {

@@ -1,5 +1,5 @@
-#ifndef _ELASTOS_ERRCODE_HPP_
-#define _ELASTOS_ERRCODE_HPP_
+#ifndef _ELASTOS_SDK_CLOUD_ERRCODE_HPP_
+#define _ELASTOS_SDK_CLOUD_ERRCODE_HPP_
 
 namespace elastos {
 
@@ -106,4 +106,4 @@ private:
 
 } // namespace elastos
 
-#endif /* _ELASTOS_ERRCODE_HPP_ */
+#endif /* _ELASTOS_SDK_CLOUD_ERRCODE_HPP_ */

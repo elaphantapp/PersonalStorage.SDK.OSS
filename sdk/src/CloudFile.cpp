@@ -9,7 +9,7 @@
 #include <CloudFile.hpp>
 #include <CloudFileSystem.hpp>
 #include <CloudPartition.hpp>
-#include <ErrCode.hpp>
+#include <CloudErrCode.hpp>
 #include <Log.hpp>
 #include <sstream>
 #include <fstream>

@@ -10,7 +10,7 @@
 
 #include <AliCloudFileSystemImpl.hpp>
 #include <CloudPartition.hpp>
-#include <ErrCode.hpp>
+#include <CloudErrCode.hpp>
 #include <Log.hpp>
 
 namespace elastos {
