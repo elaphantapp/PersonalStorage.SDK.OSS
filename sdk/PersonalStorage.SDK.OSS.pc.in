@@ -10,6 +10,6 @@ Description: PersonalStorage.SDK.OSS
 Version: @PACKAGE_VERSION@
 
 Requires: libcurl
-Libs: -L${libdir} -lalibabacloud-oss-cpp-sdk
+Libs: -L${libdir} -lPersonalStorage.SDK.OSS -lalibabacloud-oss-cpp-sdk
 Libs.private: ${libdir}
 Cflags: -I${includedir}/PersonalStorage.SDK.OSS

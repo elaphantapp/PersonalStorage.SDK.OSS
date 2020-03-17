@@ -58,6 +58,13 @@ int CloudFile::flush()
 
 int CloudFile::write(const uint8_t from[], int size)
 {
+    if(from == nullptr) {
+        CHECK_ERRCODE(ErrCode::InvalidArgument);
+    }
+    if(mFile == nullptr) {
+        CHECK_ERRCODE(ErrCode::FileNotOpened);
+    }
+
     auto ret = mPartition->getFileSystem()->write(mFile, from, size);
     CHECK_ERRCODE(ret);
 
@@ -66,6 +73,13 @@ int CloudFile::write(const uint8_t from[], int size)
 
 int CloudFile::read(uint8_t to[], int size)
 {
+    if(to == nullptr) {
+        CHECK_ERRCODE(ErrCode::InvalidArgument);
+    }
+    if(mFile == nullptr) {
+        CHECK_ERRCODE(ErrCode::FileNotOpened);
+    }
+
     auto ret = mPartition->getFileSystem()->read(mFile, to, size);
     CHECK_ERRCODE(ret);
 
@@ -74,6 +88,10 @@ int CloudFile::read(uint8_t to[], int size)
 
 int CloudFile::write(const std::shared_ptr<std::iostream> from)
 {
+    if(mFile == nullptr) {
+        CHECK_ERRCODE(ErrCode::FileNotOpened);
+    }
+
     auto ret = mPartition->getFileSystem()->write(mFile, from);
     CHECK_ERRCODE(ret);
 
@@ -82,6 +100,10 @@ int CloudFile::write(const std::shared_ptr<std::iostream> from)
 
 int CloudFile::read(std::shared_ptr<std::iostream> to)
 {
+    if(mFile == nullptr) {
+        CHECK_ERRCODE(ErrCode::FileNotOpened);
+    }
+
     auto ret = mPartition->getFileSystem()->read(mFile, to);
     CHECK_ERRCODE(ret);
 

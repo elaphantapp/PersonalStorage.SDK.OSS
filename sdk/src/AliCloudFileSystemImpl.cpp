@@ -58,16 +58,16 @@ std::atomic<int> AliCloudFileSystemImpl::sCounter;
 AliCloudFileSystemImpl::AliCloudFileSystemImpl()
     : mAliOssClient()
 {
-    Log::D(Log::TAG, __PRETTY_FUNCTION__);
+    Log::D(Log::TAG, FORMAT_METHOD);
 }
 
 AliCloudFileSystemImpl::~AliCloudFileSystemImpl()
 {
-    Log::D(Log::TAG, __PRETTY_FUNCTION__);
+    Log::D(Log::TAG, FORMAT_METHOD);
 
     if(--sCounter == 0) {
         AliOss::ShutdownSdk();
-        Log::D(Log::TAG, "%s Deinitialized aos sdk", __PRETTY_FUNCTION__);
+        Log::D(Log::TAG, "%s Deinitialized aos sdk", FORMAT_METHOD);
     }
 }
 
@@ -76,9 +76,9 @@ int AliCloudFileSystemImpl::login(const std::string& site,
                                   const std::string& password,
                                   const std::string& token)
 {
-    Log::D(Log::TAG, __PRETTY_FUNCTION__);
+    Log::D(Log::TAG, FORMAT_METHOD);
     if(sCounter <= 0) {
-        Log::D(Log::TAG, "%s Initialize aos sdk", __PRETTY_FUNCTION__);
+        Log::D(Log::TAG, "%s Initialize aos sdk", FORMAT_METHOD);
         AliOss::InitializeSdk();
         sCounter = 1;
     }
@@ -92,7 +92,7 @@ int AliCloudFileSystemImpl::login(const std::string& site,
 
 int AliCloudFileSystemImpl::mount(const std::string& label, CloudMode mode)
 {
-    Log::D(Log::TAG, __PRETTY_FUNCTION__);
+    Log::D(Log::TAG, FORMAT_METHOD);
 
     AliOss::CreateBucketRequest request{label,
                                         AliOss::StorageClass::Standard,
@@ -132,6 +132,10 @@ int AliCloudFileSystemImpl::close(const std::shared_ptr<File> file)
 int AliCloudFileSystemImpl::write(const std::shared_ptr<File> file,
                                   const uint8_t buf[], int size)
 {
+    if(buf == nullptr) {
+        CHECK_ERRCODE(ErrCode::InvalidArgument);
+    }
+
     auto filePtr = std::static_pointer_cast<AliOssFile>(file);
     if(filePtr == nullptr) {
         CHECK_ERRCODE(ErrCode::InvalidArgument);
@@ -157,6 +161,10 @@ int AliCloudFileSystemImpl::write(const std::shared_ptr<File> file,
 int AliCloudFileSystemImpl::read(const std::shared_ptr<File> file,
                                  uint8_t buf[], int size)
 {
+    if(buf == nullptr) {
+        CHECK_ERRCODE(ErrCode::InvalidArgument);
+    }
+
     auto filePtr = std::static_pointer_cast<AliOssFile>(file);
     if(filePtr == nullptr) {
         CHECK_ERRCODE(ErrCode::InvalidArgument);
@@ -181,7 +189,7 @@ int AliCloudFileSystemImpl::read(const std::shared_ptr<File> file,
     CHECK_ALIOSS_ECODE(aliOssRet);
 
     int recvSize = static_cast<int>(aliOssRet.result().Metadata().ContentLength());
-    // Log::W(Log::TAG, "%s range=(%d~%d), return=%d", __PRETTY_FUNCTION__, filePtr->mReadPostion , filePtr->mReadPostion + size - 1, recvSize);
+    // Log::W(Log::TAG, "%s range=(%d~%d), return=%d", FORMAT_METHOD, filePtr->mReadPostion , filePtr->mReadPostion + size - 1, recvSize);
     aliOssRet.result().Content()->read(reinterpret_cast<char*>(buf), recvSize);
 
     filePtr->mReadPostion += recvSize;
@@ -272,7 +280,7 @@ int AliCloudFileSystemImpl::partUpload(const std::shared_ptr<File> file, bool la
     filePtr->mPartUploadCache = nullptr;
     filePtr->mPartUploadCacheSize = 0;
 
-    // Log::D(Log::TAG, "%s num=%d,tag=%s", __PRETTY_FUNCTION__,
+    // Log::D(Log::TAG, "%s num=%d,tag=%s", FORMAT_METHOD,
     //                  filePtr->mPartUploadNumber, aliOssRet.result().ETag().c_str());
 
     if(lastTime == false) {
@@ -340,6 +348,8 @@ int AliCloudFileSystemImpl::transAliOssErrCode(bool isSuccess, AlibabaCloud::OSS
         {"TooManyBuckets", ErrCode::AliOssTooManyBuckets},
         {"ValidateError", ErrCode::AliOssValidateError},
         {"ClientError:200023", ErrCode::AliOssClientError200023},
+        {"ServerError:404", ErrCode::AliOssServerError404},
+        
     };
 
     int ret = ErrCode::AliOssUnknownError;

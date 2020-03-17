@@ -9,28 +9,37 @@ public:
 #define CHECK_ERRCODE(errCode)                                           \
     if(errCode < 0) {                                                    \
         int errRet = errCode;                                            \
-        if(errRet > elastos::ErrCode::SourceLineSection) {               \
-            errRet *= (-elastos::ErrCode::SourceLineSection);            \
-            errRet -= __LINE__;                                          \
+        if(errRet < elastos::ErrCode::SourceLineSection) {               \
+            errRet += (__LINE__ * elastos::ErrCode::SourceLineSection);  \
         }                                                                \
-        Log::E(Log::TAG, "errcode=%d: (%d) %s.",    \
-                         errRet, __LINE__, __PRETTY_FUNCTION__);         \
+        Log::E(Log::TAG, "errcode=%d: (%d) %s.",                         \
+                         errRet, __LINE__, FORMAT_METHOD);         \
         return errRet;                                                   \
     }
 
 // #define CHECK_RETVAL(ret) \
 // 	if(ret < 0) { \
-// 		Log::E(Log::TAG, "Failed to call %s in line %d, return %d.", __PRETTY_FUNCTION__, __LINE__, ret); \
+// 		Log::E(Log::TAG, "Failed to call %s in line %d, return %d.", FORMAT_METHOD, __LINE__, ret); \
 //         return; \
 // 	}
 
 // #define CHECK_AND_RETDEF(ret, def) \
 // 	if(ret < 0) { \
-// 		Log::E(Log::TAG, "Failed to call %s in line %d, return %d.", __PRETTY_FUNCTION__, __LINE__, ret); \
+// 		Log::E(Log::TAG, "Failed to call %s in line %d, return %d.", FORMAT_METHOD, __LINE__, ret); \
 // 		return def; \
 // 	}
 
+#define FORMAT_METHOD elastos::ErrCode::GetFormatMethod(__PRETTY_FUNCTION__).c_str()
+
     /*** static function and variable ***/
+    static std::string GetFormatMethod(const std::string& prettyFunction) {
+        size_t colons = prettyFunction.find("::");
+        size_t begin = prettyFunction.substr(0,colons).rfind(" ") + 1;
+        size_t end = prettyFunction.rfind("(") - begin;
+        std::string method = prettyFunction.substr(begin,end) + "()";
+        return method;
+    }
+
     constexpr static const int ReservedError = -1;
     constexpr static const int UnknownError = -2;
     constexpr static const int UnimplementedError = -3;
@@ -40,6 +49,7 @@ public:
     constexpr static const int PermissionDenied = -7;
     constexpr static const int FileExists = -8;
     constexpr static const int ForbiddenBeforeLogin = -9;
+    constexpr static const int FileNotOpened = -10;
     
     // AliOss ErrCode
     constexpr static const int AliOssUnknownError = -100;
@@ -86,10 +96,12 @@ public:
     constexpr static const int AliOssTooManyBuckets = -141;
     constexpr static const int AliOssValidateError = -142;
     constexpr static const int AliOssClientError200023 = -143;
+    constexpr static const int AliOssServerError404 = -144;
+    
     
 
 
-    constexpr static const int SourceLineSection = -10000;
+    constexpr static const int SourceLineSection = -100000;
 
     /*** class function and variable ***/
 

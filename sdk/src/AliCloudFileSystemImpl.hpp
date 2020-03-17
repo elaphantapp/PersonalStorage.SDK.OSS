@@ -12,6 +12,7 @@
 #define _ELASTOS_SDK_ALI_CLOUD_FILESYSTEM_IMPL_HPP_
 
 #include <CloudFileSystem.hpp>
+#include <Log.hpp>
 
 namespace AlibabaCloud {
 namespace OSS {
