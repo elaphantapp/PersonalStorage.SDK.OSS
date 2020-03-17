@@ -11,11 +11,11 @@
 #ifndef _ELASTOS_SDK_CLOUD_STORAGE_STRATEGY_HPP_
 #define _ELASTOS_SDK_CLOUD_STORAGE_STRATEGY_HPP_
 
-#include <fstream>
+#include <iostream>
 #include <memory>
 #include <string>
-#include <CloudMode.hpp>
 #include <CloudFileSystem.hpp>
+#include <CloudMode.hpp>
 
 namespace elastos {
 namespace sdk {

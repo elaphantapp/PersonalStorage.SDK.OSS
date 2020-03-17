@@ -9,7 +9,7 @@ message(STATUS "alioss library path: ${ALIOSS_LIBRARY}")
 
 
 file( GLOB ${CMAKE_PROJECT_NAME}-SOURCES "*.cpp" )
-file( GLOB ${CMAKE_PROJECT_NAME}-HEADERS "*.hpp" "../include/*.hpp")
+file( GLOB ${CMAKE_PROJECT_NAME}-HEADERS "../include/*.hpp")
 
 if((NOT "${CFG_TARGET_PLATFORM}" STREQUAL "Android") AND (NOT "${CFG_TARGET_PLATFORM}" STREQUAL "iOS"))
 file( GLOB ${CMAKE_PROJECT_NAME}-DEPHEADERS "../crosspl/*.hpp" )

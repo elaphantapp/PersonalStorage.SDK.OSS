@@ -29,17 +29,7 @@ public:
 // 		return def; \
 // 	}
 
-#define FORMAT_METHOD elastos::ErrCode::GetFormatMethod(__PRETTY_FUNCTION__).c_str()
-
     /*** static function and variable ***/
-    static std::string GetFormatMethod(const std::string& prettyFunction) {
-        size_t colons = prettyFunction.find("::");
-        size_t begin = prettyFunction.substr(0,colons).rfind(" ") + 1;
-        size_t end = prettyFunction.rfind("(") - begin;
-        std::string method = prettyFunction.substr(begin,end) + "()";
-        return method;
-    }
-
     constexpr static const int ReservedError = -1;
     constexpr static const int UnknownError = -2;
     constexpr static const int UnimplementedError = -3;
