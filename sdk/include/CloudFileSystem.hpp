@@ -50,6 +50,9 @@ public:
                      std::shared_ptr<File>& file) = 0;
     virtual int close(const std::shared_ptr<File> file) = 0;
 
+    virtual int list(const std::shared_ptr<File> file,
+                     std::vector<std::string>& subFiles) = 0;
+
     virtual int write(const std::shared_ptr<File> file,
                       const uint8_t buf[], int size) = 0;
     virtual int read(const std::shared_ptr<File> file,

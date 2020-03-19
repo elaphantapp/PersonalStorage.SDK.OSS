@@ -12,6 +12,7 @@
 
 static int testBuffer(std::shared_ptr<elastos::sdk::CloudPartition> partition);
 static int testFile(std::shared_ptr<elastos::sdk::CloudPartition> partition);
+static int testList(std::shared_ptr<elastos::sdk::CloudPartition> partition);
 
 // struct OssInfo {
 //     static constexpr const char* user = "LTAI4Fp5AVnjm6whAs9Whu4E";
@@ -22,12 +23,12 @@ static int testFile(std::shared_ptr<elastos::sdk::CloudPartition> partition);
 // };
 
 struct OssInfo {
-    static constexpr const char* user = "STS.NTSJ8pVG8SWt7KuNQFBWbDeYY";
-    static constexpr const char* password = "7RQmRG8dxYGJWhsTQNWZ2gwssHLdML5xaHueTJacESPM";
-    static constexpr const char* token = "CAIS2AJ1q6Ft5B2yfSjIr5fmAYLEu5gZ5JWfNW3EqlETTthOq6Dyuzz2IH1OfnRrAuEWsvQynWxR5v0flqZ0UIQAQEXCZMR99NFe6QL5xiUFEyrzv9I+k5SANTW5x3eZtZaglYybIfrZfvCyEQ6m8gZ43br9cxi7QlWhKufnoJV7b9MRLH/aCD1dH4V5KxdFos0XPmezUPG2KUzSn3b3BkhlsRYGvAEZ06mkxdCG4RfzlUDzzvRvx778OZ+5dcJhTr4dBN6+x75xbbGTknwSuRVO/eJtjOlf5TDdt96QRFhbwxOsCdHE38dAFTdIZfE7PfBv9tzxhOcp4MbilprMkgQKf8MtCnyDFdr+nZWYQ7z3aYxjKYyWYSqdjoq9UbDuqB4hbH4hMwdHRsEsMHcYC2Z3F2uAd/T8qQCWMlr6F/HVi/wstp1u1BDt9NyDKFWVBryB0DbI2RTb1OKuXhqAAaO3hyiCOCJqkf1JRqYXV5Jkek1ULcV6x3pKzm3LvZpAmTp0ypjpHNCWYVnQOaAuUyVpOhdbYWO2g4qORtjHRnEcxK1JFICPc8gy7wz1W098Zangg0oBn4yP3R5xRWosM/TyUzb0q8e/CYdHeIqFRSCBkWPnW0gdotlkeJ7sGZUz";
+    static constexpr const char* user = "STS.NSri8pUXGYthAVWpWp79aQNwd";
+    static constexpr const char* password = "7PoHooFp6KXXyeptopNzZRsReDQBLn4GppCC2B2Vn8Bw";
+    static constexpr const char* token = "CAIS2AJ1q6Ft5B2yfSjIr5DHIoLEuIdm7raDQ3DmlFclO7ZNvovchjz2IH1OfnRrAuEWsvQynWxR5v0flqZ0UIQAQEXCZMR99NFe6QL5gCEaVCvzv9I+k5SANTW5x3eZtZaglYybIfrZfvCyEQ6m8gZ43br9cxi7QlWhKufnoJV7b9MRLH/aCD1dH4V5KxdFos0XPmezUPG2KUzSn3b3BkhlsRYGvAEZ06mkxdCG4RfzlUDzzvRvx778OZ+5dcJhTr4dBN6+x75xbbGTknwSuRVO/eJtjOlf5TDdt96QRFhj5SivbOnZ8tNEFAIgS6gQML4Z8PmlrfJm5erayKTnxTQKf8MtCnyDFdr+nZWYQ7z3aYxjKYyWYSqdjoq9UbDuqB4hbH4hMwdHRsEsMHcYC2Z3F2uAd/T8qQCWMlr6F/HVi/wstp1u1BDt9NyDKFWVBryB0DbI2RTb1OKuXhqAAZ8dh461Er/EKC6LiGfc62h/X/hDR0pAtKl3Hh1miyXRIOl/j3HzpkggUu2D6cjOfy77T2RcRyQzvZhUjdqGp2rTBgeO1D2jShnbUdycf+H6YXPnHuT2q9+aYJ+/u82BCSiVeRZ0OquRqdruAlMYTvFbXoMlHA20Oyio7DTLkBu8";
     static constexpr const char* disk = "oss-cn-shanghai.aliyuncs.com";
     static constexpr const char* partition = "ela-sh-storage";
-    static constexpr const char* path = "ibHnBRSxErGQPYk1iN6C2Leyr92BYivS1z/test-file";
+    static constexpr const char* path = "iZnUA7kehfCPe1EhBCx54i1Pgv7na7HxfJ/test";
 };
 
 int main( int argc, char **argv )
@@ -47,6 +48,9 @@ int main( int argc, char **argv )
     // CHECK_RETVAL(ret);
 
     ret = testFile(partition);
+    CHECK_RETVAL(ret);
+
+    ret = testList(partition);
     CHECK_RETVAL(ret);
 
     return 0;
@@ -131,6 +135,29 @@ int testFile(std::shared_ptr<elastos::sdk::CloudPartition> partition)
 
     ret = file->close();
     CHECK_RETVAL(ret);
+
+    return 0;
+}
+
+int testList(std::shared_ptr<elastos::sdk::CloudPartition> partition)
+{
+    std::cout << "test list..." << std::endl;
+
+    std::vector<std::string> subFileList;
+
+    auto file = std::make_shared<elastos::sdk::CloudFile>();
+    int ret = file->open(partition, OssInfo::path, elastos::sdk::CloudMode::UserAll);
+    CHECK_RETVAL(ret);
+
+    ret = file->list(subFileList);
+    CHECK_RETVAL(ret);
+
+    ret = file->close();
+    CHECK_RETVAL(ret);
+
+    for(const auto& it: subFileList) {
+        std::cout << "file list: " << it << std::endl;
+    }
 
     return 0;
 }

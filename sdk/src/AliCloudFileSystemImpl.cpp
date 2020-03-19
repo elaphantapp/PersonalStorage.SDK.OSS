@@ -129,6 +129,27 @@ int AliCloudFileSystemImpl::close(const std::shared_ptr<File> file)
     return 0;
 }
 
+int AliCloudFileSystemImpl::list(const std::shared_ptr<File> file,
+                                 std::vector<std::string>& subFiles) {
+    auto filePtr = std::static_pointer_cast<AliOssFile>(file);
+    if(filePtr == nullptr) {
+        CHECK_ERRCODE(ErrCode::InvalidArgument);
+    }
+
+    AliOss::ListObjectsRequest request {filePtr->mLabel};
+    request.setPrefix(filePtr->mPath);
+    request.setMaxKeys(1000);
+    auto aliOssRet = mAliOssClient->ListObjects(request);
+    CHECK_ALIOSS_ECODE(aliOssRet);
+
+    subFiles.clear();
+    for (const auto& object : aliOssRet.result().ObjectSummarys()) {
+        subFiles.push_back(object.Key());
+    }
+
+    return subFiles.size();
+}
+
 int AliCloudFileSystemImpl::write(const std::shared_ptr<File> file,
                                   const uint8_t buf[], int size)
 {

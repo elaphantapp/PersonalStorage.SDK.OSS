@@ -56,6 +56,14 @@ int CloudFile::flush()
     return 0;
 }
 
+int CloudFile::list(std::vector<std::string>& subFiles)
+{
+    auto ret = mPartition->getFileSystem()->list(mFile, subFiles);
+    CHECK_ERRCODE(ret);
+
+    return 0;
+}
+
 int CloudFile::write(const uint8_t from[], int size)
 {
     if(from == nullptr) {

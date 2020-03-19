@@ -50,6 +50,9 @@ public:
                      std::shared_ptr<File>& file) override;
     virtual int close(const std::shared_ptr<File> file) override;
 
+    virtual int list(const std::shared_ptr<File> file,
+                     std::vector<std::string>& subFiles) override;
+
     virtual int write(const std::shared_ptr<File> file,
                       const uint8_t buf[], int size) override;
     virtual int read(const std::shared_ptr<File> file,

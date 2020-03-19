@@ -14,6 +14,7 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <vector>
 #include <CloudFileSystem.hpp>
 #include <CloudMode.hpp>
 
@@ -37,6 +38,8 @@ public:
                      CloudMode mode = CloudMode::UserAll);
     virtual int close();
     virtual int flush();
+
+    virtual int list(std::vector<std::string>& subFiles);
 
     virtual int write(const uint8_t from[], int size);
     virtual int read(uint8_t to[], int size);
