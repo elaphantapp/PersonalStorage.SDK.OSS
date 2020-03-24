@@ -21,17 +21,22 @@ class CloudFileSystem : public std::enable_shared_from_this<CloudFileSystem> {
 public:
     /*** type define ***/
     struct File {
-        std::string mLabel;
-        std::string mPath;
-        int mReadPostion = 0;
-        int mWritePostion = 0;
-        int64_t mSize = 0;
+        std::string label;
+        std::string path;
+        int readPosition = 0;
+        int writePosition = 0;
+        int64_t size = 0;
 
         virtual void clear() {
-            mReadPostion = 0;
-            mWritePostion = 0;
-            mSize = 0;
+            readPosition = 0;
+            writePosition = 0;
+            size = 0;
         }
+    };
+
+    struct Stat {
+        int64_t size;
+        int64_t modifiedTime;
     };
 
     /*** static function and variable ***/
@@ -50,8 +55,11 @@ public:
                      std::shared_ptr<File>& file) = 0;
     virtual int close(const std::shared_ptr<File> file) = 0;
 
+    virtual int stat(const std::shared_ptr<File> file,
+                     Stat& stat) = 0;
     virtual int list(const std::shared_ptr<File> file,
                      std::vector<std::string>& subFiles) = 0;
+    virtual int remove(const std::shared_ptr<File> file) = 0;
 
     virtual int write(const std::shared_ptr<File> file,
                       const uint8_t buf[], int size) = 0;

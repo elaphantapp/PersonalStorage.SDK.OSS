@@ -56,9 +56,25 @@ int CloudFile::flush()
     return 0;
 }
 
+int CloudFile::stat(Stat& stat)
+{
+    auto ret = mPartition->getFileSystem()->stat(mFile, stat);
+    CHECK_ERRCODE(ret);
+
+    return 0;
+}
+
 int CloudFile::list(std::vector<std::string>& subFiles)
 {
     auto ret = mPartition->getFileSystem()->list(mFile, subFiles);
+    CHECK_ERRCODE(ret);
+
+    return 0;
+}
+
+int CloudFile::remove()
+{
+    auto ret = mPartition->getFileSystem()->remove(mFile);
     CHECK_ERRCODE(ret);
 
     return 0;

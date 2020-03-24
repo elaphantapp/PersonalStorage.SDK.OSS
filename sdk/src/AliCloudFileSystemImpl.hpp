@@ -50,8 +50,11 @@ public:
                      std::shared_ptr<File>& file) override;
     virtual int close(const std::shared_ptr<File> file) override;
 
+    virtual int stat(const std::shared_ptr<File> file,
+                     Stat& stat) override;
     virtual int list(const std::shared_ptr<File> file,
                      std::vector<std::string>& subFiles) override;
+    virtual int remove(const std::shared_ptr<File> file) override;
 
     virtual int write(const std::shared_ptr<File> file,
                       const uint8_t buf[], int size) override;
@@ -71,6 +74,7 @@ private:
 
     /*** class function and variable ***/
     int partUpload(const std::shared_ptr<File> file, bool lastTime);
+    std::string formatAliOssPath(const std::string& path);
     int transAliOssErrCode(bool isSuccess, AlibabaCloud::OSS::OssError& aliOssError);
 
     std::shared_ptr<AlibabaCloud::OSS::OssClient> mAliOssClient;

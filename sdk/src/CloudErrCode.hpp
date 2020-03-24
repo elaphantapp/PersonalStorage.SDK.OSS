@@ -9,9 +9,9 @@ public:
 #define CHECK_ERRCODE(errCode)                                           \
     if(errCode < 0) {                                                    \
         int errRet = errCode;                                            \
-        if(errRet < elastos::ErrCode::SourceLineSection) {               \
+        /*if(errRet > elastos::ErrCode::SourceLineSection) {               \
             errRet += (__LINE__ * elastos::ErrCode::SourceLineSection);  \
-        }                                                                \
+        }*/                                                               \
         Log::E(Log::TAG, "errcode=%d: (%d) %s.",                         \
                          errRet, __LINE__, FORMAT_METHOD);         \
         return errRet;                                                   \
@@ -89,8 +89,6 @@ public:
     constexpr static const int AliOssServerError404 = -144;
     
     
-
-
     constexpr static const int SourceLineSection = -100000;
 
     /*** class function and variable ***/

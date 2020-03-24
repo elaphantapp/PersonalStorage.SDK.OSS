@@ -26,6 +26,7 @@ class CloudPartition;
 class CloudFile {
 public:
     /*** type define ***/
+    using Stat = CloudFileSystem::Stat;
 
     /*** static function and variable ***/
 
@@ -39,7 +40,9 @@ public:
     virtual int close();
     virtual int flush();
 
+    virtual int stat(Stat& stat);
     virtual int list(std::vector<std::string>& subFiles);
+    virtual int remove();
 
     virtual int write(const uint8_t from[], int size);
     virtual int read(uint8_t to[], int size);

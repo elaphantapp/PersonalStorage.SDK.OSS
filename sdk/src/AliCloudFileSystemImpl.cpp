@@ -6,10 +6,10 @@
 //
 
 #include <AliCloudFileSystemImpl.hpp>
-#include <CloudErrCode.hpp>
-#include <Log.hpp>
 
 #include <alibabacloud/oss/OssClient.h>
+#include <CloudErrCode.hpp>
+#include <Log.hpp>
 
 namespace AliOss = AlibabaCloud::OSS;
 
@@ -109,8 +109,8 @@ int AliCloudFileSystemImpl::open(const std::string& label,
                                  std::shared_ptr<File>& file)
 {
     file = std::make_shared<AliOssFile>();
-    file->mLabel = label;
-    file->mPath = filepath;
+    file->label = label;
+    file->path = formatAliOssPath(filepath);
 
 
     return 0;
@@ -129,15 +129,39 @@ int AliCloudFileSystemImpl::close(const std::shared_ptr<File> file)
     return 0;
 }
 
-int AliCloudFileSystemImpl::list(const std::shared_ptr<File> file,
-                                 std::vector<std::string>& subFiles) {
+int AliCloudFileSystemImpl::stat(const std::shared_ptr<File> file,
+                                 Stat& stat)
+{
     auto filePtr = std::static_pointer_cast<AliOssFile>(file);
     if(filePtr == nullptr) {
         CHECK_ERRCODE(ErrCode::InvalidArgument);
     }
 
-    AliOss::ListObjectsRequest request {filePtr->mLabel};
-    request.setPrefix(filePtr->mPath);
+    auto aliOssRet = mAliOssClient->GetObjectMeta(filePtr->label, filePtr->path);
+    CHECK_ALIOSS_ECODE(aliOssRet);
+
+    auto metaData = aliOssRet.result();
+    stat.size = metaData.ContentLength();
+
+    std::tm tm = {};
+    strptime(metaData.LastModified().c_str(), "%a, %d %b %Y %H:%M:%S %Z", &tm); // Tue, 24 Mar 2020 06:42:43 GMT
+    auto timePoint = std::chrono::system_clock::from_time_t(std::mktime(&tm));
+    auto now = std::chrono::duration_cast<std::chrono::milliseconds>(timePoint.time_since_epoch());
+    stat.modifiedTime = now.count();
+
+    return 0;
+}
+
+int AliCloudFileSystemImpl::list(const std::shared_ptr<File> file,
+                                 std::vector<std::string>& subFiles)
+{
+    auto filePtr = std::static_pointer_cast<AliOssFile>(file);
+    if(filePtr == nullptr) {
+        CHECK_ERRCODE(ErrCode::InvalidArgument);
+    }
+
+    AliOss::ListObjectsRequest request {filePtr->label};
+    request.setPrefix(filePtr->path);
     request.setMaxKeys(1000);
     auto aliOssRet = mAliOssClient->ListObjects(request);
     CHECK_ALIOSS_ECODE(aliOssRet);
@@ -148,6 +172,28 @@ int AliCloudFileSystemImpl::list(const std::shared_ptr<File> file,
     }
 
     return subFiles.size();
+}
+
+int AliCloudFileSystemImpl::remove(const std::shared_ptr<File> file)
+{
+    auto filePtr = std::static_pointer_cast<AliOssFile>(file);
+    if(filePtr == nullptr) {
+        CHECK_ERRCODE(ErrCode::InvalidArgument);
+    }
+
+    std::vector<std::string> subFiles;
+    int ret = list(filePtr, subFiles);
+    CHECK_ERRCODE(ret);
+
+    AliOss::DeleteObjectsRequest request {filePtr->label};
+    for(const auto& it: subFiles) {
+        request.addKey(it);
+    }
+    request.addKey(filePtr->path);
+    auto aliOssRet = mAliOssClient->DeleteObjects(request);
+    CHECK_ALIOSS_ECODE(aliOssRet);
+
+    return 0;
 }
 
 int AliCloudFileSystemImpl::write(const std::shared_ptr<File> file,
@@ -168,7 +214,7 @@ int AliCloudFileSystemImpl::write(const std::shared_ptr<File> file,
     }
     filePtr->mPartUploadCache->write(reinterpret_cast<const char*>(buf), size);
     filePtr->mPartUploadCacheSize += size;
-    filePtr->mWritePostion += size;
+    filePtr->writePosition += size;
     if(filePtr->mPartUploadCacheSize < AliOssFile::UploadPartMinSize) {
         return size;
     }
@@ -191,29 +237,29 @@ int AliCloudFileSystemImpl::read(const std::shared_ptr<File> file,
         CHECK_ERRCODE(ErrCode::InvalidArgument);
     }
 
-    if(filePtr->mSize <= 0) {
-        auto aliOssRet = mAliOssClient->HeadObject(filePtr->mLabel, filePtr->mPath);
+    if(filePtr->size <= 0) {
+        auto aliOssRet = mAliOssClient->GetObjectMeta(filePtr->label, filePtr->path);
         CHECK_ALIOSS_ECODE(aliOssRet);
-        filePtr->mSize = aliOssRet.result().ContentLength();
+        filePtr->size = aliOssRet.result().ContentLength();
     }
 
-    if(filePtr->mReadPostion >= filePtr->mSize) {
+    if(filePtr->readPosition >= filePtr->size) {
         return 0;
     }
-    if(filePtr->mReadPostion + size >= filePtr->mSize) {
-        size = filePtr->mSize - filePtr->mReadPostion;
+    if(filePtr->readPosition + size >= filePtr->size) {
+        size = filePtr->size - filePtr->readPosition;
     }
 
-    AliOss::GetObjectRequest request {filePtr->mLabel, filePtr->mPath};
-    request.setRange(filePtr->mReadPostion , filePtr->mReadPostion + size - 1);
+    AliOss::GetObjectRequest request {filePtr->label, filePtr->path};
+    request.setRange(filePtr->readPosition , filePtr->readPosition + size - 1);
     auto aliOssRet = mAliOssClient->GetObject(request);
     CHECK_ALIOSS_ECODE(aliOssRet);
 
     int recvSize = static_cast<int>(aliOssRet.result().Metadata().ContentLength());
-    // Log::W(Log::TAG, "%s range=(%d~%d), return=%d", FORMAT_METHOD, filePtr->mReadPostion , filePtr->mReadPostion + size - 1, recvSize);
+    // Log::W(Log::TAG, "%s range=(%d~%d), return=%d", FORMAT_METHOD, filePtr->readPosition , filePtr->readPosition + size - 1, recvSize);
     aliOssRet.result().Content()->read(reinterpret_cast<char*>(buf), recvSize);
 
-    filePtr->mReadPostion += recvSize;
+    filePtr->readPosition += recvSize;
 
     return recvSize;
 }
@@ -230,7 +276,7 @@ int AliCloudFileSystemImpl::write(const std::shared_ptr<File> file,
     int size = stream->tellg();
     stream->seekg(0, stream->beg);
 
-    AliOss::PutObjectRequest request {filePtr->mLabel, filePtr->mPath, stream};
+    AliOss::PutObjectRequest request {filePtr->label, filePtr->path, stream};
     auto aliOssRet = mAliOssClient->PutObject(request);
     CHECK_ALIOSS_ECODE(aliOssRet);
     
@@ -247,15 +293,15 @@ int AliCloudFileSystemImpl::read(const std::shared_ptr<File> file,
 
     stream->clear();
 
-    AliOss::GetObjectRequest request {filePtr->mLabel, filePtr->mPath};
-    request.setRange(filePtr->mReadPostion, -1);
+    AliOss::GetObjectRequest request {filePtr->label, filePtr->path};
+    request.setRange(filePtr->readPosition, -1);
     request.setResponseStreamFactory([=]() {return stream;});
     auto aliOssRet = mAliOssClient->GetObject(request);
     CHECK_ALIOSS_ECODE(aliOssRet);
 
     int size = static_cast<int>(aliOssRet.result().Metadata().ContentLength());
 
-    // filePtr->mReadPostion += size;
+    // filePtr->readPosition += size;
 
     return size;
 }
@@ -281,13 +327,13 @@ int AliCloudFileSystemImpl::partUpload(const std::shared_ptr<File> file, bool la
     }
 
     if(filePtr->mPartUploadToken.empty() == true) {
-        AliOss::InitiateMultipartUploadRequest request(filePtr->mLabel, filePtr->mPath);
+        AliOss::InitiateMultipartUploadRequest request(filePtr->label, filePtr->path);
         auto aliOssRet = mAliOssClient->InitiateMultipartUpload(request);
         CHECK_ALIOSS_ECODE(aliOssRet);
         filePtr->mPartUploadToken = aliOssRet.result().UploadId();
     }
 
-    AliOss::UploadPartRequest request {filePtr->mLabel, filePtr->mPath, filePtr->mPartUploadCache};
+    AliOss::UploadPartRequest request {filePtr->label, filePtr->path, filePtr->mPartUploadCache};
     request.setContentLength(filePtr->mPartUploadCacheSize);
     request.setUploadId(filePtr->mPartUploadToken);
     request.setPartNumber(filePtr->mPartUploadNumber + 1);
@@ -309,7 +355,7 @@ int AliCloudFileSystemImpl::partUpload(const std::shared_ptr<File> file, bool la
     }
 
     if(filePtr->mPartUploadNumber > 0) {
-        AliOss::CompleteMultipartUploadRequest request {filePtr->mLabel, filePtr->mPath};
+        AliOss::CompleteMultipartUploadRequest request {filePtr->label, filePtr->path};
         request.setUploadId(filePtr->mPartUploadToken);
         request.setPartList(filePtr->mPartUploadETagList);
         auto aliOssRet = mAliOssClient->CompleteMultipartUpload(request);
@@ -317,6 +363,17 @@ int AliCloudFileSystemImpl::partUpload(const std::shared_ptr<File> file, bool la
     }
 
     return 0;
+}
+
+std::string AliCloudFileSystemImpl::formatAliOssPath(const std::string& path)
+{
+    std::string formattedPath = path;
+    auto pos = std::string::npos;
+    while ((pos = formattedPath.find("//")) != std::string::npos) {
+        formattedPath.erase(pos, 1);
+    }
+
+    return formattedPath;
 }
 
 int AliCloudFileSystemImpl::transAliOssErrCode(bool isSuccess, AlibabaCloud::OSS::OssError& aliOssError)

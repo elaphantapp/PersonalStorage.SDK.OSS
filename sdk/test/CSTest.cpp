@@ -13,23 +13,26 @@
 static int testBuffer(std::shared_ptr<elastos::sdk::CloudPartition> partition);
 static int testFile(std::shared_ptr<elastos::sdk::CloudPartition> partition);
 static int testList(std::shared_ptr<elastos::sdk::CloudPartition> partition);
-
-// struct OssInfo {
-//     static constexpr const char* user = "LTAI4Fp5AVnjm6whAs9Whu4E";
-//     static constexpr const char* password = "3N6YyUPedbtAMyn5VtkwaMesFu2VaU";
-//     static constexpr const char* disk = "oss-cn-beijing.aliyuncs.com";
-//     static constexpr const char* partition = "elastos-partition";
-//     static constexpr const char* path = "test-file";
-// };
+static int testStat(std::shared_ptr<elastos::sdk::CloudPartition> partition);
+static int testDelete(std::shared_ptr<elastos::sdk::CloudPartition> partition);
 
 struct OssInfo {
-    static constexpr const char* user = "STS.NSri8pUXGYthAVWpWp79aQNwd";
-    static constexpr const char* password = "7PoHooFp6KXXyeptopNzZRsReDQBLn4GppCC2B2Vn8Bw";
-    static constexpr const char* token = "CAIS2AJ1q6Ft5B2yfSjIr5DHIoLEuIdm7raDQ3DmlFclO7ZNvovchjz2IH1OfnRrAuEWsvQynWxR5v0flqZ0UIQAQEXCZMR99NFe6QL5gCEaVCvzv9I+k5SANTW5x3eZtZaglYybIfrZfvCyEQ6m8gZ43br9cxi7QlWhKufnoJV7b9MRLH/aCD1dH4V5KxdFos0XPmezUPG2KUzSn3b3BkhlsRYGvAEZ06mkxdCG4RfzlUDzzvRvx778OZ+5dcJhTr4dBN6+x75xbbGTknwSuRVO/eJtjOlf5TDdt96QRFhj5SivbOnZ8tNEFAIgS6gQML4Z8PmlrfJm5erayKTnxTQKf8MtCnyDFdr+nZWYQ7z3aYxjKYyWYSqdjoq9UbDuqB4hbH4hMwdHRsEsMHcYC2Z3F2uAd/T8qQCWMlr6F/HVi/wstp1u1BDt9NyDKFWVBryB0DbI2RTb1OKuXhqAAZ8dh461Er/EKC6LiGfc62h/X/hDR0pAtKl3Hh1miyXRIOl/j3HzpkggUu2D6cjOfy77T2RcRyQzvZhUjdqGp2rTBgeO1D2jShnbUdycf+H6YXPnHuT2q9+aYJ+/u82BCSiVeRZ0OquRqdruAlMYTvFbXoMlHA20Oyio7DTLkBu8";
-    static constexpr const char* disk = "oss-cn-shanghai.aliyuncs.com";
-    static constexpr const char* partition = "ela-sh-storage";
-    static constexpr const char* path = "iZnUA7kehfCPe1EhBCx54i1Pgv7na7HxfJ/test";
+    static constexpr const char* user = "LTAI4Fp5AVnjm6whAs9Whu4E";
+    static constexpr const char* password = "3N6YyUPedbtAMyn5VtkwaMesFu2VaU";
+    static constexpr const char* token = "";
+    static constexpr const char* disk = "oss-cn-beijing.aliyuncs.com";
+    static constexpr const char* partition = "elastos-partition";
+    static constexpr const char* path = "ieN9XGCo4A6UcESU8p6y8tfWBMXjidn6WW/";
 };
+
+// struct OssInfo {
+//     static constexpr const char* user = "STS.NUDB6WNDzmuMJ6xJy2ct5fYZd";
+//     static constexpr const char* password = "GgWw9XMkz4jeHmv6WUvSp22rVZYuqytzU1U8KkMaUKVY";
+//     static constexpr const char* token = "CAISwQJ1q6Ft5B2yfSjIr5bxCYzjo5tb2remSBDJrnlnb/sZiZzxhjz2IH1OfnRrAuEWsvQynWxR5v0flqZ0UIQAQEXCZMR99NFe6QL570lSQCvzv9I+k5SANTW57neZtZagjIybIfrZfvCyESem8gZ43br9cxi7QlWhKufnoJV7b9MRLGbaAD1dH4UUXD4AzvUXLnzML/2gHwf3i27LdipStxF7lHl05NaWoJqV4QGMi0bhmK1H5db8JpHhdMkpJ4t4Sd660at3e4yQ4AF77ERjqpp9oZd5qS+Zr4GBDWZ7xiWEMubSrOJQa01bHvFiR/8e8qWiyaYn5LOJzdjNpkwTbb0PYUP2X5u9xcbIIuStO+sieKzzU3a3iY3VbMSu6FJ0PSJGbV8TK4F8MBh3EgdpTzjcI6Cq4hXDegazm0sONxqXV/MagAGseLGP6PquuawBUZok2P6/ozdB6pEvKF6ue7r5T8q0UvZkzWI/w177+7K0eFOAB0Pxj9huy8dpQI0MAYDZLJ9aJw8N5LZwE+78BVtGWnsbsUuwz4kr2ygX12AFSJVVtHDCr1BKEEDrd7LcE/gt+2qdhxbK5kGYHXQFHaoXOcrYlg==";
+//     static constexpr const char* disk = "oss-cn-shanghai.aliyuncs.com";
+//     static constexpr const char* partition = "ela-sh-storage";
+//     static constexpr const char* path = "ieN9XGCo4A6UcESU8p6y8tfWBMXjidn6WW/";
+// };
 
 int main( int argc, char **argv )
 {
@@ -44,10 +47,16 @@ int main( int argc, char **argv )
     // ret = partition->mount();
     // CHECK_RETVAL(ret);
 
-    // ret = testBuffer(partition);
-    // CHECK_RETVAL(ret);
-
     ret = testFile(partition);
+    CHECK_RETVAL(ret);
+
+    ret = testStat(partition);
+    CHECK_RETVAL(ret);
+
+    ret = testDelete(partition);
+    CHECK_RETVAL(ret);
+
+    ret = testBuffer(partition);
     CHECK_RETVAL(ret);
 
     ret = testList(partition);
@@ -72,7 +81,7 @@ int testBuffer(std::shared_ptr<elastos::sdk::CloudPartition> partition)
     inputFile->close();
 
     auto file = std::make_shared<elastos::sdk::CloudFile>();
-    int ret = file->open(partition, OssInfo::path, elastos::sdk::CloudMode::UserAll);
+    int ret = file->open(partition, std::string(OssInfo::path) + "test-buffer", elastos::sdk::CloudMode::UserAll);
     CHECK_RETVAL(ret);
 
     inputFile = std::make_shared<std::fstream>(inputBufferName, std::ios::in);
@@ -122,7 +131,7 @@ int testFile(std::shared_ptr<elastos::sdk::CloudPartition> partition)
     inputFile->close();
 
     auto file = std::make_shared<elastos::sdk::CloudFile>();
-    int ret = file->open(partition, OssInfo::path, elastos::sdk::CloudMode::UserAll);
+    int ret = file->open(partition, std::string(OssInfo::path) + "/test-file", elastos::sdk::CloudMode::UserAll);
     CHECK_RETVAL(ret);
 
     ret = file->write(std::make_shared<std::fstream>(inputFileName, std::ios::in));
@@ -158,6 +167,48 @@ int testList(std::shared_ptr<elastos::sdk::CloudPartition> partition)
     for(const auto& it: subFileList) {
         std::cout << "file list: " << it << std::endl;
     }
+
+    return 0;
+}
+
+int testStat(std::shared_ptr<elastos::sdk::CloudPartition> partition)
+{
+    std::cout << "test stat..." << std::endl;
+
+    std::vector<std::string> subFileList;
+
+    auto file = std::make_shared<elastos::sdk::CloudFile>();
+    int ret = file->open(partition, std::string(OssInfo::path) + "test-file", elastos::sdk::CloudMode::UserAll);
+    CHECK_RETVAL(ret);
+
+    elastos::sdk::CloudFile::Stat stat;
+    ret = file->stat(stat);
+    CHECK_RETVAL(ret);
+
+    ret = file->close();
+    CHECK_RETVAL(ret);
+
+    std::cout << "file size: " << stat.size << std::endl;
+    std::cout << "file modifiedTime: " << stat.modifiedTime << std::endl;
+
+    return 0;
+}
+
+int testDelete(std::shared_ptr<elastos::sdk::CloudPartition> partition)
+{
+    std::cout << "test delete..." << std::endl;
+
+    std::vector<std::string> subFileList;
+
+    auto file = std::make_shared<elastos::sdk::CloudFile>();
+    int ret = file->open(partition, OssInfo::path, elastos::sdk::CloudMode::UserAll);
+    CHECK_RETVAL(ret);
+
+    ret = file->remove();
+    CHECK_RETVAL(ret);
+
+    ret = file->close();
+    CHECK_RETVAL(ret);
 
     return 0;
 }
