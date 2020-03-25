@@ -40,6 +40,7 @@ public:
     };
 
     /*** static function and variable ***/
+    static std::string FormatPath(const std::string& path);
 
     /*** class function and variable ***/
     virtual int login(const std::string& site,

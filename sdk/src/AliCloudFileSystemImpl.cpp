@@ -110,7 +110,7 @@ int AliCloudFileSystemImpl::open(const std::string& label,
 {
     file = std::make_shared<AliOssFile>();
     file->label = label;
-    file->path = formatAliOssPath(filepath);
+    file->path = FormatPath(filepath);
 
 
     return 0;
@@ -363,17 +363,6 @@ int AliCloudFileSystemImpl::partUpload(const std::shared_ptr<File> file, bool la
     }
 
     return 0;
-}
-
-std::string AliCloudFileSystemImpl::formatAliOssPath(const std::string& path)
-{
-    std::string formattedPath = path;
-    auto pos = std::string::npos;
-    while ((pos = formattedPath.find("//")) != std::string::npos) {
-        formattedPath.erase(pos, 1);
-    }
-
-    return formattedPath;
 }
 
 int AliCloudFileSystemImpl::transAliOssErrCode(bool isSuccess, AlibabaCloud::OSS::OssError& aliOssError)

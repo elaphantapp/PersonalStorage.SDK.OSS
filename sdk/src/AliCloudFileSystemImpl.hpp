@@ -74,7 +74,6 @@ private:
 
     /*** class function and variable ***/
     int partUpload(const std::shared_ptr<File> file, bool lastTime);
-    std::string formatAliOssPath(const std::string& path);
     int transAliOssErrCode(bool isSuccess, AlibabaCloud::OSS::OssError& aliOssError);
 
     std::shared_ptr<AlibabaCloud::OSS::OssClient> mAliOssClient;
