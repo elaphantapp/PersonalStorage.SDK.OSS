@@ -22,6 +22,9 @@ std::string CloudFileSystem::FormatPath(const std::string& path)
 {
     std::string formattedPath = path;
     auto pos = std::string::npos;
+    while ((pos = formattedPath.find("/")) == 0) {
+        formattedPath.erase(pos, 1);
+    }
     while ((pos = formattedPath.find("//")) != std::string::npos) {
         formattedPath.erase(pos, 1);
     }
