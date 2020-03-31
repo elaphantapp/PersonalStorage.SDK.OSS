@@ -31,7 +31,7 @@ int CloudFile::open(std::shared_ptr<CloudPartition> partition,
     mPartition = partition;
     auto ret = mPartition->getFileSystem()->open(mPartition->getLabel(),
                                                   path, mode, mFile);
-    CHECK_ERRCODE(ret);
+    CHECK_CLOUD_ECODE(ret);
 
     return 0;
 }
@@ -39,7 +39,7 @@ int CloudFile::open(std::shared_ptr<CloudPartition> partition,
 int CloudFile::close()
 {
     auto ret = mPartition->getFileSystem()->close(mFile);
-    CHECK_ERRCODE(ret);
+    CHECK_CLOUD_ECODE(ret);
 
     mPartition = nullptr;
     mFile = nullptr;
@@ -49,7 +49,7 @@ int CloudFile::close()
 int CloudFile::flush()
 {
     auto ret = mPartition->getFileSystem()->close(mFile);
-    CHECK_ERRCODE(ret);
+    CHECK_CLOUD_ECODE(ret);
 
     mFile->clear();
 
@@ -59,7 +59,7 @@ int CloudFile::flush()
 int CloudFile::stat(Stat& stat)
 {
     auto ret = mPartition->getFileSystem()->stat(mFile, stat);
-    CHECK_ERRCODE(ret);
+    CHECK_CLOUD_ECODE(ret);
 
     return 0;
 }
@@ -67,7 +67,7 @@ int CloudFile::stat(Stat& stat)
 int CloudFile::list(std::vector<std::string>& subFiles)
 {
     auto ret = mPartition->getFileSystem()->list(mFile, subFiles);
-    CHECK_ERRCODE(ret);
+    CHECK_CLOUD_ECODE(ret);
 
     return 0;
 }
@@ -75,7 +75,7 @@ int CloudFile::list(std::vector<std::string>& subFiles)
 int CloudFile::remove()
 {
     auto ret = mPartition->getFileSystem()->remove(mFile);
-    CHECK_ERRCODE(ret);
+    CHECK_CLOUD_ECODE(ret);
 
     return 0;
 }
@@ -83,14 +83,14 @@ int CloudFile::remove()
 int CloudFile::write(const uint8_t from[], int size)
 {
     if(from == nullptr) {
-        CHECK_ERRCODE(ErrCode::InvalidArgument);
+        CHECK_CLOUD_ECODE(CloudErrCode::InvalidArgument);
     }
     if(mFile == nullptr) {
-        CHECK_ERRCODE(ErrCode::FileNotOpened);
+        CHECK_CLOUD_ECODE(CloudErrCode::FileNotOpened);
     }
 
     auto ret = mPartition->getFileSystem()->write(mFile, from, size);
-    CHECK_ERRCODE(ret);
+    CHECK_CLOUD_ECODE(ret);
 
     return ret;
 }
@@ -98,14 +98,14 @@ int CloudFile::write(const uint8_t from[], int size)
 int CloudFile::read(uint8_t to[], int size)
 {
     if(to == nullptr) {
-        CHECK_ERRCODE(ErrCode::InvalidArgument);
+        CHECK_CLOUD_ECODE(CloudErrCode::InvalidArgument);
     }
     if(mFile == nullptr) {
-        CHECK_ERRCODE(ErrCode::FileNotOpened);
+        CHECK_CLOUD_ECODE(CloudErrCode::FileNotOpened);
     }
 
     auto ret = mPartition->getFileSystem()->read(mFile, to, size);
-    CHECK_ERRCODE(ret);
+    CHECK_CLOUD_ECODE(ret);
 
     return ret;
 }
@@ -113,11 +113,11 @@ int CloudFile::read(uint8_t to[], int size)
 int CloudFile::write(const std::shared_ptr<std::iostream> from)
 {
     if(mFile == nullptr) {
-        CHECK_ERRCODE(ErrCode::FileNotOpened);
+        CHECK_CLOUD_ECODE(CloudErrCode::FileNotOpened);
     }
 
     auto ret = mPartition->getFileSystem()->write(mFile, from);
-    CHECK_ERRCODE(ret);
+    CHECK_CLOUD_ECODE(ret);
 
     return ret;
 }
@@ -125,11 +125,11 @@ int CloudFile::write(const std::shared_ptr<std::iostream> from)
 int CloudFile::read(std::shared_ptr<std::iostream> to)
 {
     if(mFile == nullptr) {
-        CHECK_ERRCODE(ErrCode::FileNotOpened);
+        CHECK_CLOUD_ECODE(CloudErrCode::FileNotOpened);
     }
 
     auto ret = mPartition->getFileSystem()->read(mFile, to);
-    CHECK_ERRCODE(ret);
+    CHECK_CLOUD_ECODE(ret);
 
     return ret;
 }

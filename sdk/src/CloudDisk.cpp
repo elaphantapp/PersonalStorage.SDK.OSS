@@ -47,7 +47,7 @@ int CloudDisk::login(const std::string& site,
                      const std::string& token)
 {
     int ret = mCloudFileSystem->login(site, user, password, token);
-    CHECK_ERRCODE(ret);
+    CHECK_CLOUD_ECODE(ret);
 
     mLogined = true;
     return 0;
@@ -57,7 +57,7 @@ int CloudDisk::getPartition(const std::string& label,
                             std::shared_ptr<CloudPartition>& parition)
 {
     if(mLogined == false) {
-        CHECK_ERRCODE(ErrCode::ForbiddenBeforeLogin);
+        CHECK_CLOUD_ECODE(CloudErrCode::ForbiddenBeforeLogin);
     }
 
     parition = std::make_shared<CloudPartition>(label, mCloudFileSystem);

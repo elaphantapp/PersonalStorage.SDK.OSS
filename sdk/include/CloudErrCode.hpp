@@ -2,11 +2,12 @@
 #define _ELASTOS_SDK_CLOUD_ERRCODE_HPP_
 
 namespace elastos {
+namespace sdk {
 
-class ErrCode {
+class CloudErrCode {
 public:
     /*** type define ***/
-#define CHECK_ERRCODE(errCode)                                           \
+#define CHECK_CLOUD_ECODE(errCode)                                           \
     if(errCode < 0) {                                                    \
         int errRet = errCode;                                            \
         /*if(errRet > elastos::ErrCode::SourceLineSection) {               \
@@ -99,11 +100,12 @@ private:
     /*** static function and variable ***/
 
     /*** class function and variable ***/
-    explicit ErrCode() = delete;
-    virtual ~ErrCode() = delete;
+    explicit CloudErrCode() = delete;
+    virtual ~CloudErrCode() = delete;
 
-}; // class ErrCode
+}; // class CloudErrCode
 
+} // namespace sdk
 } // namespace elastos
 
 #endif /* _ELASTOS_SDK_CLOUD_ERRCODE_HPP_ */

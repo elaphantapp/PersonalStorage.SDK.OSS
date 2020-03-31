@@ -15,7 +15,7 @@ namespace AliOss = AlibabaCloud::OSS;
 
 #define CHECK_ALIOSS_ECODE(aliOssRet) {                                     \
     int ret = transAliOssErrCode(aliOssRet.isSuccess(), aliOssRet.error()); \
-    CHECK_ERRCODE(ret);                                                     \
+    CHECK_CLOUD_ECODE(ret);                                                     \
 }
 
 namespace elastos {
@@ -120,11 +120,11 @@ int AliCloudFileSystemImpl::close(const std::shared_ptr<File> file)
 {
     auto filePtr = std::static_pointer_cast<AliOssFile>(file);
     if(filePtr == nullptr) {
-        CHECK_ERRCODE(ErrCode::InvalidArgument);
+        CHECK_CLOUD_ECODE(CloudErrCode::InvalidArgument);
     }
 
     int ret = partUpload(file, true);
-    CHECK_ERRCODE(ret);
+    CHECK_CLOUD_ECODE(ret);
 
     return 0;
 }
@@ -134,7 +134,7 @@ int AliCloudFileSystemImpl::stat(const std::shared_ptr<File> file,
 {
     auto filePtr = std::static_pointer_cast<AliOssFile>(file);
     if(filePtr == nullptr) {
-        CHECK_ERRCODE(ErrCode::InvalidArgument);
+        CHECK_CLOUD_ECODE(CloudErrCode::InvalidArgument);
     }
 
     auto aliOssRet = mAliOssClient->GetObjectMeta(filePtr->label, filePtr->path);
@@ -157,7 +157,7 @@ int AliCloudFileSystemImpl::list(const std::shared_ptr<File> file,
 {
     auto filePtr = std::static_pointer_cast<AliOssFile>(file);
     if(filePtr == nullptr) {
-        CHECK_ERRCODE(ErrCode::InvalidArgument);
+        CHECK_CLOUD_ECODE(CloudErrCode::InvalidArgument);
     }
 
     AliOss::ListObjectsRequest request {filePtr->label};
@@ -178,12 +178,12 @@ int AliCloudFileSystemImpl::remove(const std::shared_ptr<File> file)
 {
     auto filePtr = std::static_pointer_cast<AliOssFile>(file);
     if(filePtr == nullptr) {
-        CHECK_ERRCODE(ErrCode::InvalidArgument);
+        CHECK_CLOUD_ECODE(CloudErrCode::InvalidArgument);
     }
 
     std::vector<std::string> subFiles;
     int ret = list(filePtr, subFiles);
-    CHECK_ERRCODE(ret);
+    CHECK_CLOUD_ECODE(ret);
 
     AliOss::DeleteObjectsRequest request {filePtr->label};
     for(const auto& it: subFiles) {
@@ -200,12 +200,12 @@ int AliCloudFileSystemImpl::write(const std::shared_ptr<File> file,
                                   const uint8_t buf[], int size)
 {
     if(buf == nullptr) {
-        CHECK_ERRCODE(ErrCode::InvalidArgument);
+        CHECK_CLOUD_ECODE(CloudErrCode::InvalidArgument);
     }
 
     auto filePtr = std::static_pointer_cast<AliOssFile>(file);
     if(filePtr == nullptr) {
-        CHECK_ERRCODE(ErrCode::InvalidArgument);
+        CHECK_CLOUD_ECODE(CloudErrCode::InvalidArgument);
     }
 
     if(filePtr->mPartUploadCache == nullptr) {
@@ -220,7 +220,7 @@ int AliCloudFileSystemImpl::write(const std::shared_ptr<File> file,
     }
 
     int ret = partUpload(file, false);
-    CHECK_ERRCODE(ret);
+    CHECK_CLOUD_ECODE(ret);
 
     return size;
 }
@@ -229,12 +229,12 @@ int AliCloudFileSystemImpl::read(const std::shared_ptr<File> file,
                                  uint8_t buf[], int size)
 {
     if(buf == nullptr) {
-        CHECK_ERRCODE(ErrCode::InvalidArgument);
+        CHECK_CLOUD_ECODE(CloudErrCode::InvalidArgument);
     }
 
     auto filePtr = std::static_pointer_cast<AliOssFile>(file);
     if(filePtr == nullptr) {
-        CHECK_ERRCODE(ErrCode::InvalidArgument);
+        CHECK_CLOUD_ECODE(CloudErrCode::InvalidArgument);
     }
 
     if(filePtr->size <= 0) {
@@ -269,7 +269,7 @@ int AliCloudFileSystemImpl::write(const std::shared_ptr<File> file,
 {
     auto filePtr = std::static_pointer_cast<AliOssFile>(file);
     if(filePtr == nullptr) {
-        CHECK_ERRCODE(ErrCode::InvalidArgument);
+        CHECK_CLOUD_ECODE(CloudErrCode::InvalidArgument);
     }
 
     stream->seekg(0, stream->end);
@@ -288,7 +288,7 @@ int AliCloudFileSystemImpl::read(const std::shared_ptr<File> file,
 {
     auto filePtr = std::static_pointer_cast<AliOssFile>(file);
     if(filePtr == nullptr) {
-        CHECK_ERRCODE(ErrCode::InvalidArgument);
+        CHECK_CLOUD_ECODE(CloudErrCode::InvalidArgument);
     }
 
     stream->clear();
@@ -318,7 +318,7 @@ int AliCloudFileSystemImpl::partUpload(const std::shared_ptr<File> file, bool la
 {
     auto filePtr = std::static_pointer_cast<AliOssFile>(file);
     if(filePtr == nullptr) {
-        CHECK_ERRCODE(ErrCode::InvalidArgument);
+        CHECK_CLOUD_ECODE(CloudErrCode::InvalidArgument);
     }
 
     if(filePtr->mPartUploadCache == nullptr
@@ -372,54 +372,54 @@ int AliCloudFileSystemImpl::transAliOssErrCode(bool isSuccess, AlibabaCloud::OSS
     }
 
     const std::map<std::string, int> errCodeMap {
-        {"AccessDenied", ErrCode::AliOssAccessDenied},
-        {"BucketAlreadyExists", ErrCode::AliOssBucketAlreadyExists},
-        {"BucketNotEmpty", ErrCode::AliOssBucketNotEmpty},
-        {"EntityTooLarge", ErrCode::AliOssEntityTooLarge},
-        {"EntityTooSmall", ErrCode::AliOssEntityTooSmall},
-        {"FileGroupTooLarge", ErrCode::AliOssFileGroupTooLarge},
-        {"InvalidLinkName", ErrCode::AliOssInvalidLinkName},
-        {"LinkPartNotExist", ErrCode::AliOssLinkPartNotExist},
-        {"ObjectLinkTooLarge", ErrCode::AliOssObjectLinkTooLarge},
-        {"FieldItemTooLong", ErrCode::AliOssFieldItemTooLong},
-        {"FilePartInterity", ErrCode::AliOssFilePartInterity},
-        {"FilePartNotExist", ErrCode::AliOssFilePartNotExist},
-        {"FilePartStale", ErrCode::AliOssFilePartStale},
-        {"IncorrectNumberOfFilesInPOSTRequest", ErrCode::AliOssIncorrectNumberOfFilesInPOSTRequest},
-        {"InvalidArgument", ErrCode::AliOssInvalidArgument},
-        {"InvalidAccessKeyId", ErrCode::AliOssInvalidAccessKeyId},
-        {"InvalidBucketName", ErrCode::AliOssInvalidBucketName},
-        {"InvalidDigest", ErrCode::AliOssInvalidDigest},
-        {"InvalidEncryptionAlgorithmError", ErrCode::AliOssInvalidEncryptionAlgorithmError},
-        {"InvalidObjectName", ErrCode::AliOssInvalidObjectName},
-        {"InvalidPart", ErrCode::AliOssInvalidPart},
-        {"InvalidPartOrder", ErrCode::AliOssInvalidPartOrder},
-        {"InvalidPolicyDocument", ErrCode::AliOssInvalidPolicyDocument},
-        {"InvalidTargetBucketForLogging", ErrCode::AliOssInvalidTargetBucketForLogging},
-        {"InternalError", ErrCode::AliOssInternalError},
-        {"MalformedXML", ErrCode::AliOssMalformedXML},
-        {"MalformedPOSTRequest", ErrCode::AliOssMalformedPOSTRequest},
-        {"MaxPOSTPreDataLengthExceededError", ErrCode::AliOssMaxPOSTPreDataLengthExceededError},
-        {"MethodNotAllowed", ErrCode::AliOssMethodNotAllowed},
-        {"MissingArgument", ErrCode::AliOssMissingArgument},
-        {"MissingContentLength", ErrCode::AliOssMissingContentLength},
-        {"NoSuchBucket", ErrCode::AliOssNoSuchBucket},
-        {"NoSuchKey", ErrCode::AliOssNoSuchKey},
-        {"NoSuchUpload", ErrCode::AliOssNoSuchUpload},
-        {"NotImplemented", ErrCode::AliOssNotImplemented},
-        {"PreconditionFailed", ErrCode::AliOssPreconditionFailed},
-        {"RequestTimeTooSkewed", ErrCode::AliOssRequestTimeTooSkewed},
-        {"RequestTimeout", ErrCode::AliOssRequestTimeout},
-        {"RequestIsNotMultiPartContent", ErrCode::AliOssRequestIsNotMultiPartContent},
-        {"SignatureDoesNotMatch", ErrCode::AliOssSignatureDoesNotMatch},
-        {"TooManyBuckets", ErrCode::AliOssTooManyBuckets},
-        {"ValidateError", ErrCode::AliOssValidateError},
-        {"ClientError:200023", ErrCode::AliOssClientError200023},
-        {"ServerError:404", ErrCode::AliOssServerError404},
+        {"AccessDenied", CloudErrCode::AliOssAccessDenied},
+        {"BucketAlreadyExists", CloudErrCode::AliOssBucketAlreadyExists},
+        {"BucketNotEmpty", CloudErrCode::AliOssBucketNotEmpty},
+        {"EntityTooLarge", CloudErrCode::AliOssEntityTooLarge},
+        {"EntityTooSmall", CloudErrCode::AliOssEntityTooSmall},
+        {"FileGroupTooLarge", CloudErrCode::AliOssFileGroupTooLarge},
+        {"InvalidLinkName", CloudErrCode::AliOssInvalidLinkName},
+        {"LinkPartNotExist", CloudErrCode::AliOssLinkPartNotExist},
+        {"ObjectLinkTooLarge", CloudErrCode::AliOssObjectLinkTooLarge},
+        {"FieldItemTooLong", CloudErrCode::AliOssFieldItemTooLong},
+        {"FilePartInterity", CloudErrCode::AliOssFilePartInterity},
+        {"FilePartNotExist", CloudErrCode::AliOssFilePartNotExist},
+        {"FilePartStale", CloudErrCode::AliOssFilePartStale},
+        {"IncorrectNumberOfFilesInPOSTRequest", CloudErrCode::AliOssIncorrectNumberOfFilesInPOSTRequest},
+        {"InvalidArgument", CloudErrCode::AliOssInvalidArgument},
+        {"InvalidAccessKeyId", CloudErrCode::AliOssInvalidAccessKeyId},
+        {"InvalidBucketName", CloudErrCode::AliOssInvalidBucketName},
+        {"InvalidDigest", CloudErrCode::AliOssInvalidDigest},
+        {"InvalidEncryptionAlgorithmError", CloudErrCode::AliOssInvalidEncryptionAlgorithmError},
+        {"InvalidObjectName", CloudErrCode::AliOssInvalidObjectName},
+        {"InvalidPart", CloudErrCode::AliOssInvalidPart},
+        {"InvalidPartOrder", CloudErrCode::AliOssInvalidPartOrder},
+        {"InvalidPolicyDocument", CloudErrCode::AliOssInvalidPolicyDocument},
+        {"InvalidTargetBucketForLogging", CloudErrCode::AliOssInvalidTargetBucketForLogging},
+        {"InternalError", CloudErrCode::AliOssInternalError},
+        {"MalformedXML", CloudErrCode::AliOssMalformedXML},
+        {"MalformedPOSTRequest", CloudErrCode::AliOssMalformedPOSTRequest},
+        {"MaxPOSTPreDataLengthExceededError", CloudErrCode::AliOssMaxPOSTPreDataLengthExceededError},
+        {"MethodNotAllowed", CloudErrCode::AliOssMethodNotAllowed},
+        {"MissingArgument", CloudErrCode::AliOssMissingArgument},
+        {"MissingContentLength", CloudErrCode::AliOssMissingContentLength},
+        {"NoSuchBucket", CloudErrCode::AliOssNoSuchBucket},
+        {"NoSuchKey", CloudErrCode::AliOssNoSuchKey},
+        {"NoSuchUpload", CloudErrCode::AliOssNoSuchUpload},
+        {"NotImplemented", CloudErrCode::AliOssNotImplemented},
+        {"PreconditionFailed", CloudErrCode::AliOssPreconditionFailed},
+        {"RequestTimeTooSkewed", CloudErrCode::AliOssRequestTimeTooSkewed},
+        {"RequestTimeout", CloudErrCode::AliOssRequestTimeout},
+        {"RequestIsNotMultiPartContent", CloudErrCode::AliOssRequestIsNotMultiPartContent},
+        {"SignatureDoesNotMatch", CloudErrCode::AliOssSignatureDoesNotMatch},
+        {"TooManyBuckets", CloudErrCode::AliOssTooManyBuckets},
+        {"ValidateError", CloudErrCode::AliOssValidateError},
+        {"ClientError:200023", CloudErrCode::AliOssClientError200023},
+        {"ServerError:404", CloudErrCode::AliOssServerError404},
         
     };
 
-    int ret = ErrCode::AliOssUnknownError;
+    int ret = CloudErrCode::AliOssUnknownError;
     auto item = errCodeMap.find(aliOssError.Code());
     if(item != errCodeMap.end()) {
         ret = item->second;

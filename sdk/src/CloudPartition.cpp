@@ -38,7 +38,7 @@ CloudPartition::~CloudPartition()
 int CloudPartition::mount(CloudMode mode)
 {
     int ret = mCloudFileSystem->mount(mLabel, mode);
-    CHECK_ERRCODE(ret);
+    CHECK_CLOUD_ECODE(ret);
 
     return 0;
 }
