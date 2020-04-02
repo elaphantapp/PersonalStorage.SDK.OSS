@@ -1,11 +1,11 @@
+set(ALIOSS_LIBRARY "-L${CMAKE_INSTALL_PREFIX}/lib;-lalibabacloud-oss-cpp-sdk")
+message(STATUS "alioss library path: ${ALIOSS_LIBRARY}")
 pkg_search_module(pkg-openssl REQUIRED openssl)
 message(STATUS "openssl include path: ${pkg-openssl_INCLUDE_DIRS}")
 message(STATUS "openssl library path: ${pkg-openssl_STATIC_LDFLAGS}")
 pkg_search_module(pkg-curl REQUIRED libcurl)
 message(STATUS "curl include path: ${pkg-curl_INCLUDE_DIRS}")
 message(STATUS "curl library path: ${pkg-curl_STATIC_LDFLAGS}")
-find_library(ALIOSS_LIBRARY NAMES alibabacloud-oss-cpp-sdk PATHS ${CMAKE_INSTALL_PREFIX}/lib)
-message(STATUS "alioss library path: ${ALIOSS_LIBRARY}")
 
 
 file( GLOB ${CMAKE_PROJECT_NAME}-SOURCES "*.cpp" )
@@ -28,11 +28,11 @@ target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE
     common
 )
 
+target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE "${ALIOSS_LIBRARY}")
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE "${pkg-openssl_INCLUDE_DIRS}")
 target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE "${pkg-openssl_STATIC_LDFLAGS}")
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE "${pkg-curl_INCLUDE_DIRS}")
 target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE "${pkg-curl_STATIC_LDFLAGS}")
-target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE "${ALIOSS_LIBRARY}")
 
 if("${CFG_TARGET_PLATFORM}" STREQUAL "Android")
     target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE log)
