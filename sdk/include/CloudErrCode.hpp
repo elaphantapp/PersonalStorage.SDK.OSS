@@ -90,7 +90,7 @@ public:
     constexpr static const int AliOssServerError404 = -144;
     
     
-    constexpr static const int SourceLineSection = -100000;
+    constexpr static const int SourceLineSection = -1000000;
 
     /*** class function and variable ***/
 
