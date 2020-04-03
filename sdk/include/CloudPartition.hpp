@@ -12,7 +12,7 @@
 #define _ELASTOS_SDK_CLOUD_PARITION_HPP_
 
 #include <string>
-#include <CloudMode.hpp>
+#include "CloudMode.hpp"
 
 namespace elastos {
 namespace sdk {

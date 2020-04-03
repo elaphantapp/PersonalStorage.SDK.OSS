@@ -15,8 +15,8 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include <CloudFileSystem.hpp>
-#include <CloudMode.hpp>
+#include "CloudFileSystem.hpp"
+#include "CloudMode.hpp"
 
 namespace elastos {
 namespace sdk {
